@@ -3,14 +3,14 @@
   "latestVersion": "2026.11.08",
   "libraries": [
     {
-      "id": "daily-chunk-20261108",
-      "title": "Daily Chunk Pack",
+      "id": "operator-20261108",
+      "title": "Operator Chunk Pack 2026-11-08",
       "version": "2026.11.08",
       "path": "libraries/operator/chunk-library-20261108.clib.json",
-      "count": 0,
-      "addedCount": 0,
-      "summary": "운영자 배포 준비용 샘플 라이브러리입니다.",
-      "publishedAt": "2026-11-08T09:00:00+09:00"
+      "count": 1,
+      "addedCount": 1,
+      "summary": "1개 표현 초안 업데이트",
+      "publishedAt": "2026-11-08T04:20:11.031Z"
     }
   ]
 }
