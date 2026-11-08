@@ -91,6 +91,10 @@ function toast(message) {
 }
 
 function showView(name) {
+  if (!canOpenView(name)) {
+    toast("운영자 승인 후 사용할 수 있습니다.");
+    return;
+  }
   document.querySelectorAll(".view").forEach((view) => {
     view.classList.toggle("hidden", view.id !== `view-${name}`);
   });
@@ -99,20 +103,85 @@ function showView(name) {
   });
 }
 
+function getViewState() {
+  if (!state.user.email) return "anonymous";
+  if (state.user.role === "operator") return "operator";
+  if (state.user.status === "approved") return "approved";
+  if (state.user.status === "rejected") return "rejected";
+  return "pending";
+}
+
+function canOpenView(name) {
+  if (name === "settings") return true;
+  const viewState = getViewState();
+  if (viewState === "operator") return true;
+  if (name === "feedback") return viewState === "approved";
+  if (name === "requests") return viewState === "approved" && state.user.canRequestExpression;
+  if (name === "library") return viewState === "approved";
+  return false;
+}
+
 function renderUser() {
   const approved = state.user.status === "approved";
   const operator = state.user.role === "operator";
-  $("user-status").textContent = approved ? "승인됨" : "승인 대기";
+  const viewState = getViewState();
+  const statusText = {
+    anonymous: "로그인 필요",
+    pending: "승인 대기",
+    rejected: "승인 거절",
+    approved: "승인됨",
+    operator: "운영자",
+  }[viewState];
+  $("user-status").textContent = statusText;
   $("request-permission").textContent = state.user.canRequestExpression ? "요청 가능" : "요청 꺼짐";
   $("request-form").querySelector("button").disabled = !approved || !state.user.canRequestExpression;
   $("publish-library").disabled = !operator;
   $("user-admin").classList.toggle("hidden", !operator);
+  renderStatePanel(viewState);
+  renderNavigation();
   $("account-summary").textContent = state.user.email
     ? `${state.user.email} · ${state.user.role} · ${state.user.status}`
     : "Cloudflare Access 로그인 정보가 없습니다. 배포 URL에서 로그인해야 승인 대기에 등록됩니다.";
   $("request-setting-text").textContent = state.user.canRequestExpression
     ? `${operator ? "운영자 권한입니다." : "현재 운영자가 표현 요청 기능을 켜두었습니다."}`
     : "현재 운영자가 표현 요청 기능을 꺼두었습니다.";
+}
+
+function renderStatePanel(viewState) {
+  const copy = {
+    anonymous: {
+      title: "로그인이 필요합니다",
+      body: "운영 URL에서 Google 또는 GitHub로 로그인하면 승인 대기에 등록됩니다.",
+    },
+    pending: {
+      title: "운영자 승인 대기 중",
+      body: "계정은 등록되었습니다. 운영자가 승인하면 라이브러리와 피드백 기능이 열립니다.",
+    },
+    rejected: {
+      title: "승인이 거절되었습니다",
+      body: "현재 계정은 사용할 수 없습니다. 운영자에게 다시 승인을 요청하세요.",
+    },
+    approved: {
+      title: "라이브러리 사용 가능",
+      body: state.user.canRequestExpression
+        ? "라이브러리 확인과 표현 요청을 사용할 수 있습니다."
+        : "라이브러리 확인은 가능하며, 표현 요청은 운영자가 별도로 켜야 합니다.",
+    },
+    operator: {
+      title: "운영자 모드",
+      body: "사용자 승인, 요청 권한 관리, 표현 제작, GitHub 배포를 수행할 수 있습니다.",
+    },
+  }[viewState];
+  const panel = $("state-panel");
+  panel.className = `panel state-panel is-${viewState}`;
+  $("state-title").textContent = copy.title;
+  $("state-copy").textContent = copy.body;
+}
+
+function renderNavigation() {
+  ["library", "requests", "feedback"].forEach((name) => {
+    $(`tab-${name}`).disabled = !canOpenView(name);
+  });
 }
 
 function renderUsers() {
@@ -161,13 +230,10 @@ function renderUsers() {
 function renderLibraries() {
   const list = $("library-list");
   list.innerHTML = "";
-  if (state.user.status !== "approved") {
+  if (!canOpenView("library")) {
     const pending = document.createElement("article");
     pending.className = "panel library-card";
-    pending.innerHTML = `
-      <h3>운영자 승인 대기</h3>
-      <p>로그인은 완료되었습니다. 운영자가 승인하면 라이브러리 확인과 다운로드 안내가 열립니다.</p>
-    `;
+    pending.innerHTML = `<h3>${escapeHtml($("state-title").textContent)}</h3><p>${escapeHtml($("state-copy").textContent)}</p>`;
     list.append(pending);
     return;
   }
@@ -199,6 +265,13 @@ function renderLibraries() {
 function renderRequests() {
   const list = $("request-list");
   list.innerHTML = "";
+  if (!canOpenView("requests")) {
+    const locked = document.createElement("article");
+    locked.className = "panel library-card";
+    locked.innerHTML = "<h3>표현 요청 비활성화</h3><p>운영자가 요청 권한을 켜면 이 탭에서 익히고 싶은 표현을 보낼 수 있습니다.</p>";
+    list.append(locked);
+    return;
+  }
   if (state.requests.length === 0) {
     const empty = document.createElement("article");
     empty.className = "panel library-card";
@@ -462,6 +535,10 @@ async function checkUpdates() {
 
 async function submitFeedback(event) {
   event.preventDefault();
+  if (!canOpenView("feedback")) {
+    toast("승인된 사용자만 피드백을 올릴 수 있습니다.");
+    return;
+  }
   const form = event.currentTarget;
   const payload = {
     title: $("feedback-title").value.trim(),

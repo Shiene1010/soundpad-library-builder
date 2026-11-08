@@ -93,6 +93,26 @@ p {
   gap: 8px;
 }
 
+.state-panel {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  border-color: var(--line);
+}
+
+.state-panel.is-approved,
+.state-panel.is-operator {
+  border-color: var(--accent);
+}
+
+.state-panel.is-pending {
+  border-color: var(--warn);
+}
+
+.state-panel.is-rejected {
+  border-color: #e06767;
+}
+
 .pill {
   border-radius: 999px;
   background: var(--panel-2);
