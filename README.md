@@ -13,6 +13,7 @@ This repository is an early static-first prototype. It currently demonstrates:
 - GitHub Discussions creation for user feedback
 - Gemini draft generation and GitHub library publishing through server-side Functions
 - operator-only publish gate using Cloudflare Access identity and `OPERATOR_EMAILS`
+- first-login user capture with pending/approved/rejected status in Cloudflare KV
 - May-led agent workflow, OKR, and observability documentation
 
 Persistent request storage and full user administration are planned but not yet implemented.
@@ -88,11 +89,12 @@ Important variables:
 - `OPERATOR_EMAILS`
 - `APPROVED_USER_EMAILS`
 - `REQUEST_ENABLED_EMAILS`
+- `USERS_KV` binding in Cloudflare Pages project settings
 - `GA_MEASUREMENT_ID`
 - `SENTRY_DSN`
 
 Production secrets should live in Cloudflare project settings or an equivalent secret store, not in browser code.
-Protect the Cloudflare Pages app with Cloudflare Access before enabling public operator workflows. `/api/publish-library` requires an authenticated Access email listed in `OPERATOR_EMAILS`.
+Protect the Cloudflare Pages app with Cloudflare Access before enabling public operator workflows. Access should authenticate Google/GitHub users, while `/api/me` records first-time users as `pending` in KV. `/api/publish-library` requires an authenticated Access email listed in `OPERATOR_EMAILS`.
 
 ## Deployment
 

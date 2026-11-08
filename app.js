@@ -31,6 +31,7 @@ const state = {
   user: normalizeUser(loadJson(USER_KEY, defaultUser)),
   settings: loadJson(SETTINGS_KEY, { notificationsEnabled: true }),
   requests: loadArray(REQUESTS_KEY),
+  users: [],
   manifest: fallbackManifest,
   manifestStatus: "idle",
 };
@@ -99,14 +100,56 @@ function renderUser() {
   $("request-permission").textContent = state.user.canRequestExpression ? "요청 가능" : "요청 꺼짐";
   $("request-form").querySelector("button").disabled = !approved || !state.user.canRequestExpression;
   $("publish-library").disabled = !operator;
+  $("user-admin").classList.toggle("hidden", !operator);
   $("request-setting-text").textContent = state.user.canRequestExpression
     ? `${operator ? "운영자 권한입니다." : "현재 운영자가 표현 요청 기능을 켜두었습니다."}`
     : "현재 운영자가 표현 요청 기능을 꺼두었습니다.";
 }
 
+function renderUsers() {
+  const list = $("user-list");
+  list.innerHTML = "";
+  if (state.users.length === 0) {
+    const empty = document.createElement("article");
+    empty.className = "library-card";
+    empty.innerHTML = "<h3>사용자 없음</h3><p>새 사용자가 로그인하면 pending 상태로 여기에 표시됩니다.</p>";
+    list.append(empty);
+    return;
+  }
+  for (const user of state.users) {
+    const card = document.createElement("article");
+    card.className = "library-card";
+    card.innerHTML = `
+      <h3>${escapeHtml(user.email)}</h3>
+      <div class="meta">
+        <span>${escapeHtml(user.status)}</span>
+        <span>${escapeHtml(user.role)}</span>
+        <span>${user.canRequestExpression ? "요청 가능" : "요청 꺼짐"}</span>
+      </div>
+      <div class="action-row user-actions">
+        <button class="mini-button" data-user-action="approve" data-user-email="${escapeHtml(user.email)}" type="button">승인</button>
+        <button class="mini-button" data-user-action="reject" data-user-email="${escapeHtml(user.email)}" type="button">거절</button>
+        <button class="mini-button" data-user-action="enable_requests" data-user-email="${escapeHtml(user.email)}" type="button">요청 켬</button>
+        <button class="mini-button" data-user-action="disable_requests" data-user-email="${escapeHtml(user.email)}" type="button">요청 끔</button>
+      </div>
+    `;
+    list.append(card);
+  }
+}
+
 function renderLibraries() {
   const list = $("library-list");
   list.innerHTML = "";
+  if (state.user.status !== "approved") {
+    const pending = document.createElement("article");
+    pending.className = "panel library-card";
+    pending.innerHTML = `
+      <h3>운영자 승인 대기</h3>
+      <p>로그인은 완료되었습니다. 운영자가 승인하면 라이브러리 확인과 다운로드 안내가 열립니다.</p>
+    `;
+    list.append(pending);
+    return;
+  }
   if (state.manifestStatus === "failed") {
     const warning = document.createElement("article");
     warning.className = "panel library-card";
@@ -310,6 +353,31 @@ async function loadServerUser() {
     loadDemoUser();
   }
   renderUser();
+  if (state.user.role === "operator") await loadUsers();
+}
+
+async function loadUsers() {
+  try {
+    const res = await fetch("/api/users", { cache: "no-store" });
+    if (!res.ok) throw new Error("users_fetch_failed");
+    const data = await res.json();
+    state.users = Array.isArray(data.users) ? data.users : [];
+  } catch {
+    state.users = [];
+    toast("사용자 목록을 불러오지 못했습니다.");
+  }
+  renderUsers();
+}
+
+async function updateUserAccess(email, action) {
+  const res = await fetch("/api/users", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email, action }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "user_update_failed");
+  await loadUsers();
 }
 
 async function buildGeminiDraft(request) {
@@ -338,6 +406,10 @@ function escapeHtml(value) {
 }
 
 async function checkUpdates() {
+  if (state.user.status !== "approved") {
+    renderLibraries();
+    return;
+  }
   try {
     const res = await fetch("./libraries/manifest.json", { cache: "no-store" });
     if (!res.ok) throw new Error("manifest_fetch_failed");
@@ -437,6 +509,21 @@ function bindEvents() {
   $("operator-demo").addEventListener("click", () => {
     $("operator-summary").classList.toggle("hidden");
   });
+  $("refresh-users").addEventListener("click", () => void loadUsers());
+  $("user-list").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-user-action]");
+    if (!button) return;
+    const email = button.dataset.userEmail;
+    const action = button.dataset.userAction;
+    updateUserAccess(email, action)
+      .then(() => toast("사용자 권한을 업데이트했습니다."))
+      .catch((error) => {
+        const message = error.message === "approved_user_limit_reached"
+          ? "승인 사용자는 45명까지만 가능합니다."
+          : "사용자 권한 업데이트에 실패했습니다.";
+        toast(message);
+      });
+  });
   $("clear-requests").addEventListener("click", () => {
     state.requests = [];
     saveRequests();
@@ -507,5 +594,6 @@ bindEvents();
 renderUser();
 renderLibraries();
 renderRequests();
+renderUsers();
 void loadServerUser();
 void checkUpdates();
