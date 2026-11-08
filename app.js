@@ -153,7 +153,8 @@ function renderRequests() {
         <button class="mini-button" data-request-action="reviewing" data-request-id="${escapeHtml(request.id)}" type="button">검토중</button>
         <button class="mini-button" data-request-action="approved" data-request-id="${escapeHtml(request.id)}" type="button">승인</button>
         <button class="mini-button" data-request-action="rejected" data-request-id="${escapeHtml(request.id)}" type="button">거절</button>
-        <button class="mini-button" data-request-action="draft" data-request-id="${escapeHtml(request.id)}" type="button">초안</button>
+        <button class="mini-button" data-request-action="draft" data-request-id="${escapeHtml(request.id)}" type="button">수동초안</button>
+        <button class="mini-button" data-request-action="gemini" data-request-id="${escapeHtml(request.id)}" type="button">Gemini</button>
       </div>
       ${request.draft ? `<pre class="draft-preview">${escapeHtml(JSON.stringify(request.draft, null, 2))}</pre>` : ""}
     `;
@@ -185,6 +186,21 @@ function buildDraft(request) {
     ccq: [],
     sourceRequestId: request.id,
   };
+}
+
+async function buildGeminiDraft(request) {
+  const res = await fetch("/api/gemini-draft", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      requestId: request.id,
+      text: request.text,
+      context: request.context,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "gemini_failed");
+  return data.draft;
 }
 
 function escapeHtml(value) {
@@ -313,6 +329,20 @@ function bindEvents() {
     if (action === "draft") {
       updateRequest(id, { status: "draft", draft: buildDraft(request) });
       toast("라이브러리 초안을 만들었습니다.");
+      return;
+    }
+    if (action === "gemini") {
+      toast("Gemini 초안을 요청합니다.");
+      buildGeminiDraft(request)
+        .then((draft) => {
+          updateRequest(id, { status: "draft", draft });
+          toast("Gemini 초안을 만들었습니다.");
+        })
+        .catch((error) => {
+          const fallback = buildDraft(request);
+          updateRequest(id, { status: "draft", draft: { ...fallback, note: error.message } });
+          toast("Gemini 설정 전이라 수동 초안을 만들었습니다.");
+        });
       return;
     }
     updateRequest(id, { status: action });
