@@ -1,4 +1,4 @@
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
 
 export async function onRequestPost(context) {
   const traceId = crypto.randomUUID();
@@ -23,15 +23,19 @@ export async function onRequestPost(context) {
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort("gemini_timeout"), 15000);
-    const response = await fetch(`${GEMINI_URL}?key=${env.GEMINI_API_KEY}`, {
+    const response = await fetch(GEMINI_URL, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "x-goog-api-key": env.GEMINI_API_KEY,
+      },
       signal: controller.signal,
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
+        model: "gemini-3.8-flash",
+        input: prompt,
+        store: false,
+        generation_config: {
           temperature: 0.3,
-          responseMimeType: "application/json",
         },
       }),
     });
@@ -47,7 +51,7 @@ export async function onRequestPost(context) {
       }, 502);
     }
 
-    const raw = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const raw = extractOutputText(result);
     const draft = JSON.parse(raw);
     return json({ draft, traceId });
   } catch (error) {
@@ -55,6 +59,17 @@ export async function onRequestPost(context) {
     const isTimeout = message.includes("abort") || message.includes("timeout") || String(error).includes("gemini_timeout");
     return json({ error: isTimeout ? "gemini_timeout" : "gemini_unhandled_error", traceId, message }, isTimeout ? 504 : 500);
   }
+}
+
+function extractOutputText(interaction) {
+  const texts = [];
+  for (const step of interaction.steps || []) {
+    if (step.type !== "model_output") continue;
+    for (const item of step.content || []) {
+      if (item.type === "text" && item.text) texts.push(item.text);
+    }
+  }
+  return texts.join("\n").trim();
 }
 
 function sanitizeText(value, limit) {
