@@ -267,11 +267,9 @@ function renderRequests() {
   const list = $("request-list");
   list.innerHTML = "";
   const operator = state.user.role === "operator";
-  if (!operator && !canOpenView("requests")) {
-    const locked = document.createElement("article");
-    locked.className = "panel library-card";
-    locked.innerHTML = "<h3>표현 요청 비활성화</h3><p>운영자가 요청 권한을 켜면 이 탭에서 익히고 싶은 표현을 보낼 수 있습니다.</p>";
-    list.append(locked);
+  // Scope: this list is the operator's server-backed queue, not the user's request form.
+  if (!operator) {
+    if ($("request-queue-title")) $("request-queue-title").textContent = "요청 큐";
     return;
   }
   if ($("request-queue-title")) {
@@ -449,6 +447,12 @@ async function loadServerUser() {
 }
 
 async function loadRequests() {
+  // Scope: only operators can inspect the shared REQUESTS_KV queue.
+  if (state.user.role !== "operator") {
+    state.requests = [];
+    renderRequests();
+    return;
+  }
   try {
     const res = await fetch("/api/requests", { cache: "no-store" });
     if (!res.ok) throw new Error("requests_fetch_failed");
