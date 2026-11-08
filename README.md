@@ -18,6 +18,7 @@ Production authentication, Gemini generation, GitHub library publishing, and per
 Public demo:
 
 ```text
+https://soundpad-library-builder.pages.dev/
 https://shiene1010.github.io/soundpad-library-builder/
 ```
 
@@ -88,9 +89,9 @@ Production secrets should live in Cloudflare project settings or an equivalent s
 
 ## Deployment
 
-Current static demo deployment: GitHub Pages.
+Current production deployment: Cloudflare Pages.
 
-Recommended production deployment target: Cloudflare Pages with Pages Functions.
+Static fallback deployment: GitHub Pages.
 
 See [docs/deployment.md](docs/deployment.md) for setup steps. Prefer Git-connected Cloudflare Pages deployment over uploading the entire project root manually, because direct root uploads can accidentally include local files if not reviewed.
 

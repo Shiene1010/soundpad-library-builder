@@ -2,9 +2,15 @@
 
 ## Current Result
 
-May deployed the static mobile web demo to GitHub Pages.
+May deployed the mobile web service to Cloudflare Pages and the static fallback to GitHub Pages.
 
-Public URL:
+Cloudflare URL:
+
+```text
+https://soundpad-library-builder.pages.dev/
+```
+
+GitHub Pages fallback:
 
 ```text
 https://shiene1010.github.io/soundpad-library-builder/
@@ -16,7 +22,7 @@ Repository:
 https://github.com/Shiene1010/soundpad-library-builder
 ```
 
-Cloudflare Pages production deployment remains blocked until `CLOUDFLARE_API_TOKEN` is provided.
+Cloudflare Pages Functions are deployed. `/api/feedback` currently returns `503 feedback_not_configured` until GitHub Discussions environment variables are configured.
 
 ## Verified Locally
 
@@ -27,6 +33,9 @@ Cloudflare Pages production deployment remains blocked until `CLOUDFLARE_API_TOK
 - `.env` is ignored and `.env.example` is safe to commit.
 - GitHub Pages root returns HTTP 200.
 - GitHub Pages manifest returns HTTP 200.
+- Cloudflare Pages root returns HTTP 200.
+- Cloudflare Pages manifest returns HTTP 200.
+- Cloudflare Function `/api/feedback` returns `503 feedback_not_configured`, confirming the route is live.
 
 ## Production Deployment Path
 
@@ -47,22 +56,16 @@ Use GitHub-connected Cloudflare Pages:
 
 Direct root upload can accidentally include local files if reviewed poorly. Git-connected deployment respects `.gitignore` and gives a clearer audit trail.
 
-## Cloudflare Blockers
+## Remaining Cloudflare Configuration
 
 - Wrangler is available.
-- Cloudflare Pages deploy failed because `CLOUDFLARE_API_TOKEN` is not set in this non-interactive environment.
-- GitHub Pages is live, but Cloudflare Pages Functions are not running there.
+- Pages project `soundpad-library-builder` exists.
+- Production deployment is live.
+- GitHub Discussions automation still needs these Pages environment variables:
+  - `GITHUB_TOKEN`
+  - `GITHUB_REPOSITORY_ID`
+  - `GITHUB_DISCUSSION_CATEGORY_ID`
 
 ## Next Operator Action
 
-For Cloudflare production deployment, create a Cloudflare API token and set:
-
-```sh
-CLOUDFLARE_API_TOKEN=...
-```
-
-Then May can run:
-
-```sh
-npx wrangler pages deploy . --project-name soundpad-library-builder --branch main
-```
+Add the GitHub Discussions environment variables in Cloudflare Pages settings, then redeploy or retry `/api/feedback`.

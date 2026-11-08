@@ -26,7 +26,7 @@
 
 - ga4-events-reviewed: none
 - sentry-issues-reviewed: none
-- okr-key-result-impact: public static demo is deployed; production functions remain blocked
+- okr-key-result-impact: Cloudflare production deployment is live; GitHub Discussions posting needs environment variables
 - data-confidence: high
 
 ## Findings
@@ -34,20 +34,21 @@
 - GitHub repository was created and pushed.
 - GitHub Pages public URL was verified with HTTP 200.
 - Manifest URL was verified with HTTP 200.
-- Cloudflare Pages production deployment cannot complete until `CLOUDFLARE_API_TOKEN` is provided.
+- Cloudflare Pages deployment is live and `/api/feedback` routes to the Function.
+- `/api/feedback` correctly returns `503 feedback_not_configured` until GitHub Discussion variables are added.
 
 ## Required Fixes
 
-- Add production environment variables in Cloudflare.
-- Deploy Cloudflare Pages when `CLOUDFLARE_API_TOKEN` is available.
+- Add GitHub Discussion environment variables in Cloudflare.
+- Retest `/api/feedback` after variables are configured.
 
 ## Backpropagation
 
-- Update node: deployment status now records static demo success and Cloudflare blocker.
+- Update node: deployment status now records Cloudflare success and remaining feedback configuration.
 - Update edge: none
 - Update template: none
 - Update rule: deployment reviews require a verified URL or explicit blocker.
 
 ## Next Iteration
 
-After Cloudflare auth is available, deploy Pages Functions production build and verify `/api/feedback`.
+After GitHub Discussion variables are available, verify feedback creates a Discussion.

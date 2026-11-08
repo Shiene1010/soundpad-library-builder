@@ -15,7 +15,7 @@ Prepare and attempt production deployment of the Sound Chunk Library Builder mob
 
 ## Context
 
-The user granted May authority to handle deployment. May created the Git repository, pushed to GitHub, enabled GitHub Pages, and verified the public static demo. Cloudflare Pages production deployment still requires `CLOUDFLARE_API_TOKEN`.
+The user granted May authority to handle deployment. May created the Git repository, pushed to GitHub, enabled GitHub Pages, created the Cloudflare Pages project, deployed to Cloudflare Pages, and verified root, manifest, and feedback function routing.
 
 ## Acceptance Criteria
 
@@ -25,10 +25,12 @@ The user granted May authority to handle deployment. May created the Git reposit
 - Blockers are explicit.
 - Production deployment is not faked when external authentication is unavailable.
 - Static public demo URL is verified.
+- Cloudflare production URL is verified.
+- `/api/feedback` Function routing is verified.
 
 ## Current State
 
-GitHub Pages static deployment is live at `https://shiene1010.github.io/soundpad-library-builder/`. Cloudflare Pages Functions deployment is blocked until `CLOUDFLARE_API_TOKEN` is available.
+Cloudflare Pages deployment is live at `https://soundpad-library-builder.pages.dev/`. GitHub Pages fallback is live at `https://shiene1010.github.io/soundpad-library-builder/`. Feedback function routing is live and returns `feedback_not_configured` until GitHub Discussion environment variables are added.
 
 ## Open Questions
 
@@ -36,4 +38,4 @@ GitHub Pages static deployment is live at `https://shiene1010.github.io/soundpad
 
 ## Backpropagation Notes
 
-May should distinguish static demo deployment from production deployment with server-side Pages Functions.
+May should distinguish deployed function routing from fully configured GitHub Discussion posting.
