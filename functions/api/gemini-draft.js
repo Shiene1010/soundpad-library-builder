@@ -22,7 +22,7 @@ export async function onRequestPost(context) {
     ].join("\n");
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort("gemini_timeout"), 15000);
+    const timeout = setTimeout(() => controller.abort("gemini_timeout"), 45000);
     const response = await fetch(GEMINI_URL, {
       method: "POST",
       headers: {
