@@ -80,6 +80,10 @@ function toast(message) {
   window.setTimeout(() => el.classList.remove("show"), 1800);
 }
 
+function getErrorMessage(error) {
+  return error?.message || String(error || "unknown_error");
+}
+
 function showView(name) {
   if (!canOpenView(name)) {
     toast("현재 사용할 수 없는 메뉴입니다.");
@@ -212,9 +216,10 @@ function renderUsers() {
         updateUserAccess(user.email, button.dataset.userAction)
           .then(() => toast("사용자 권한을 업데이트했습니다."))
           .catch((error) => {
-            const message = error.message === "approved_user_limit_reached"
+            const errorMessage = getErrorMessage(error);
+            const message = errorMessage === "approved_user_limit_reached"
               ? "승인 사용자는 45명까지만 가능합니다."
-              : `사용자 권한 업데이트 실패: ${error.message}`;
+              : `사용자 권한 업데이트 실패: ${errorMessage}`;
             toast(message);
           });
       });
@@ -613,6 +618,7 @@ function bindEvents() {
   $("check-updates").addEventListener("click", () => void checkUpdates());
   $("request-form").addEventListener("submit", (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
     if (!state.user.canRequestExpression) {
       toast("현재 요청할 수 없습니다.");
       return;
@@ -622,10 +628,10 @@ function bindEvents() {
     if (!text) return;
     createExpressionRequest(text, context)
       .then(() => {
-        event.currentTarget.reset();
+        form.reset();
         toast("요청을 보냈습니다.");
       })
-      .catch((error) => toast(`요청 실패: ${error.message}`));
+      .catch((error) => toast(`요청 실패: ${getErrorMessage(error)}`));
   });
   $("feedback-form").addEventListener("submit", (event) => void submitFeedback(event));
   $("refresh-users").addEventListener("click", () => void loadUsers());
@@ -653,7 +659,7 @@ function bindEvents() {
     publishLibrary()
       .then(() => toast("GitHub libraries 폴더에 배포했습니다."))
       .catch((error) => {
-        const message = error.message === "empty_library"
+        const message = getErrorMessage(error) === "empty_library"
           ? "배포할 초안이 없습니다."
           : "운영자 로그인 후 배포할 수 있습니다.";
         toast(message);
@@ -671,7 +677,7 @@ function bindEvents() {
       const validation = validateDraft(draft);
       updateExpressionRequest(id, "save_draft", { draft, validation })
         .then(() => toast("초안을 저장했습니다."))
-        .catch((error) => toast(`초안 저장 실패: ${error.message}`));
+        .catch((error) => toast(`초안 저장 실패: ${getErrorMessage(error)}`));
       return;
     }
     if (action === "gemini") {
@@ -686,17 +692,17 @@ function bindEvents() {
         })
         .catch((error) => {
           const fallback = buildDraft(request);
-          const draft = { ...fallback, note: error.message };
+          const draft = { ...fallback, note: getErrorMessage(error) };
           const validation = validateDraft(draft);
           updateExpressionRequest(id, "save_draft", { draft, validation })
             .then(() => toast("수동 초안을 저장했습니다."))
-            .catch((saveError) => toast(`초안 저장 실패: ${saveError.message}`));
+            .catch((saveError) => toast(`초안 저장 실패: ${getErrorMessage(saveError)}`));
         });
       return;
     }
     updateExpressionRequest(id, action)
       .then(() => toast("요청 상태를 바꿨습니다."))
-      .catch((error) => toast(`상태 변경 실패: ${error.message}`));
+      .catch((error) => toast(`상태 변경 실패: ${getErrorMessage(error)}`));
   });
 }
 
