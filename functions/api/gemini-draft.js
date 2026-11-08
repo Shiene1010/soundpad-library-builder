@@ -13,17 +13,20 @@ export async function onRequestPost(context) {
     if (!env.GEMINI_API_KEY) return json({ error: "gemini_not_configured", traceId }, 503);
 
     const prompt = [
-      "Create a Sound Chunk expression library draft as strict JSON only.",
+      "Return strict JSON only for a Sound Chunk draft.",
       "Schema: { id, text, level, chunks:[{text,hint}], tones:[{key,emoji,label,pitch,rate,text}], ccq:[{answer,question}], sourceRequestId }.",
-      "Use simple Korean hints. Make 2-5 chunks, 5 tones, and 3 CCQ questions.",
+      "Use Korean hints. Make 2 chunks, 3 tones, and 2 CCQ questions.",
       `Expression: ${text}`,
       `Usage context: ${usageContext || "not provided"}`,
       `sourceRequestId: ${requestId || "manual"}`,
     ].join("\n");
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort("gemini_timeout"), 15000);
     const response = await fetch(`${GEMINI_URL}?key=${env.GEMINI_API_KEY}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
+      signal: controller.signal,
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
@@ -32,6 +35,7 @@ export async function onRequestPost(context) {
         },
       }),
     });
+    clearTimeout(timeout);
 
     const result = await response.json();
     if (!response.ok) {
