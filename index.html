@@ -30,7 +30,7 @@
         <button id="tab-library" class="tab is-active" data-view="library" type="button">라이브러리</button>
         <button id="tab-requests" class="tab" data-view="requests" type="button">요청</button>
         <button id="tab-feedback" class="tab" data-view="feedback" type="button">피드백</button>
-        <button class="tab" data-view="settings" type="button">설정</button>
+        <button id="tab-settings" class="tab" data-view="settings" type="button">설정</button>
       </nav>
 
       <section id="view-library" class="view">
@@ -91,7 +91,7 @@
             <span></span>
           </label>
         </div>
-        <div class="panel">
+        <div id="request-permission-panel" class="panel">
           <strong>표현 요청 권한</strong>
           <p id="request-setting-text">운영자가 허용한 사용자만 요청 기능을 쓸 수 있습니다.</p>
         </div>
@@ -100,7 +100,7 @@
           <p id="account-summary">계정 확인 중</p>
           <button id="switch-account" class="secondary" type="button">로그아웃 / 계정 전환</button>
         </div>
-        <div class="panel operator-panel">
+        <div id="operator-panel" class="panel operator-panel hidden">
           <div>
             <strong>운영자 데모</strong>
             <p>요청 검토, 표현 제작, 배포 관리는 별도 운영자 흐름에서 진행합니다.</p>
@@ -123,7 +123,7 @@
           </div>
           <div id="user-list" class="stack"></div>
         </div>
-        <div class="section-head">
+        <div id="operator-queue-head" class="section-head hidden">
           <h2>로컬 요청 큐</h2>
           <div class="button-pair">
             <button id="export-library" class="text-button" type="button">내보내기</button>
@@ -131,13 +131,13 @@
             <button id="clear-requests" class="text-button" type="button">비우기</button>
           </div>
         </div>
-        <div id="request-list" class="stack"></div>
+        <div id="request-list" class="stack hidden"></div>
         <pre id="export-preview" class="draft-preview hidden"></pre>
         <pre id="manifest-preview" class="draft-preview hidden"></pre>
       </section>
 
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </main>
-    <script src="./app.js?v=20261108-state-ui" type="module"></script>
+    <script src="./app.js?v=20261108-user-minimal-ui" type="module"></script>
   </body>
 </html>

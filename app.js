@@ -92,7 +92,7 @@ function toast(message) {
 
 function showView(name) {
   if (!canOpenView(name)) {
-    toast("운영자 승인 후 사용할 수 있습니다.");
+    toast("현재 사용할 수 없는 메뉴입니다.");
     return;
   }
   document.querySelectorAll(".view").forEach((view) => {
@@ -137,35 +137,39 @@ function renderUser() {
   $("request-form").querySelector("button").disabled = !approved || !state.user.canRequestExpression;
   $("publish-library").disabled = !operator;
   $("user-admin").classList.toggle("hidden", !operator);
+  $("operator-panel").classList.toggle("hidden", !operator);
+  $("operator-queue-head").classList.toggle("hidden", !operator);
+  $("request-list").classList.toggle("hidden", !operator);
+  $("request-permission-panel").classList.toggle("hidden", !approved || operator);
   renderStatePanel(viewState);
   renderNavigation();
   $("account-summary").textContent = state.user.email
-    ? `${state.user.email} · ${state.user.role} · ${state.user.status}`
-    : "Cloudflare Access 로그인 정보가 없습니다. 배포 URL에서 로그인해야 승인 대기에 등록됩니다.";
+    ? state.user.email
+    : "로그인 정보가 없습니다.";
   $("request-setting-text").textContent = state.user.canRequestExpression
-    ? `${operator ? "운영자 권한입니다." : "현재 운영자가 표현 요청 기능을 켜두었습니다."}`
-    : "현재 운영자가 표현 요청 기능을 꺼두었습니다.";
+    ? "표현 요청을 사용할 수 있습니다."
+    : "표현 요청은 현재 사용할 수 없습니다.";
 }
 
 function renderStatePanel(viewState) {
   const copy = {
     anonymous: {
-      title: "로그인이 필요합니다",
-      body: "운영 URL에서 Google 또는 GitHub로 로그인하면 승인 대기에 등록됩니다.",
+      title: "로그인 후 이용할 수 있습니다",
+      body: "계정 전환 버튼으로 로그인해 주세요.",
     },
     pending: {
-      title: "운영자 승인 대기 중",
-      body: "계정은 등록되었습니다. 운영자가 승인하면 라이브러리와 피드백 기능이 열립니다.",
+      title: "이용 준비 중입니다",
+      body: "잠시 후 다시 확인해 주세요.",
     },
     rejected: {
-      title: "승인이 거절되었습니다",
-      body: "현재 계정은 사용할 수 없습니다. 운영자에게 다시 승인을 요청하세요.",
+      title: "이 계정은 사용할 수 없습니다",
+      body: "다른 계정으로 로그인해 주세요.",
     },
     approved: {
-      title: "라이브러리 사용 가능",
+      title: "사용 가능",
       body: state.user.canRequestExpression
-        ? "라이브러리 확인과 표현 요청을 사용할 수 있습니다."
-        : "라이브러리 확인은 가능하며, 표현 요청은 운영자가 별도로 켜야 합니다.",
+        ? "라이브러리와 표현 요청을 사용할 수 있습니다."
+        : "라이브러리를 사용할 수 있습니다.",
     },
     operator: {
       title: "운영자 모드",
@@ -179,9 +183,13 @@ function renderStatePanel(viewState) {
 }
 
 function renderNavigation() {
-  ["library", "requests", "feedback"].forEach((name) => {
-    $(`tab-${name}`).disabled = !canOpenView(name);
+  ["library", "requests", "feedback", "settings"].forEach((name) => {
+    const canOpen = canOpenView(name);
+    const tab = $(`tab-${name}`);
+    tab.disabled = !canOpen;
+    tab.classList.toggle("hidden", !canOpen);
   });
+  if (!canOpenView("library") && !canOpenView("requests") && !canOpenView("feedback")) showView("settings");
 }
 
 function renderUsers() {
@@ -233,7 +241,7 @@ function renderLibraries() {
   if (!canOpenView("library")) {
     const pending = document.createElement("article");
     pending.className = "panel library-card";
-    pending.innerHTML = `<h3>${escapeHtml($("state-title").textContent)}</h3><p>${escapeHtml($("state-copy").textContent)}</p>`;
+    pending.innerHTML = "<h3>사용 가능한 라이브러리가 없습니다</h3><p>이용 가능 상태가 되면 여기에 표시됩니다.</p>";
     list.append(pending);
     return;
   }
