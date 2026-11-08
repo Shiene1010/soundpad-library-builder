@@ -18,8 +18,8 @@
       </header>
 
       <section class="panel hero">
-        <h2>새 표현 라이브러리를 확인하고 필요한 표현을 요청합니다.</h2>
-        <p>승인된 사용자는 라이브러리를 내려받고, 운영자가 허용한 사용자는 익히고 싶은 표현을 요청할 수 있습니다.</p>
+        <h2>새 표현을 받고 필요한 문장을 요청합니다.</h2>
+        <p>내게 열린 기능만 표시됩니다.</p>
       </section>
       <section id="state-panel" class="panel state-panel">
         <strong id="state-title">계정 확인 중</strong>
@@ -44,7 +44,7 @@
       <section id="view-requests" class="view hidden">
         <div class="section-head">
           <h2>표현 요청</h2>
-          <span id="request-permission" class="muted">권한 확인 중</span>
+          <span id="request-permission" class="muted">확인 중</span>
         </div>
         <form id="request-form" class="panel form">
           <label>
@@ -55,14 +55,14 @@
             쓰고 싶은 상황
             <textarea id="request-context" name="context" rows="3" placeholder="약속에 늦을 때 쓰고 싶어요"></textarea>
           </label>
-          <button class="primary" type="submit">운영자에게 요청</button>
+          <button class="primary" type="submit">요청하기</button>
         </form>
       </section>
 
       <section id="view-feedback" class="view hidden">
         <div class="section-head">
           <h2>사용 후기</h2>
-          <span class="muted">GitHub Discussions</span>
+          <span class="muted">후기</span>
         </div>
         <form id="feedback-form" class="panel form">
           <label>
@@ -79,12 +79,12 @@
 
       <section id="view-settings" class="view hidden">
         <div class="section-head">
-          <h2>사용자 설정</h2>
+          <h2>설정</h2>
         </div>
         <div class="panel setting-row">
           <div>
-            <strong>새 라이브러리 알림</strong>
-            <p>접속 시 최신 manifest를 확인하고 배너를 표시합니다.</p>
+            <strong>새 버전 알림</strong>
+            <p>접속할 때 업데이트를 확인합니다.</p>
           </div>
           <label class="switch">
             <input id="notify-toggle" type="checkbox">
@@ -92,7 +92,7 @@
           </label>
         </div>
         <div id="request-permission-panel" class="panel">
-          <strong>표현 요청 권한</strong>
+          <strong>표현 요청</strong>
           <p id="request-setting-text">운영자가 허용한 사용자만 요청 기능을 쓸 수 있습니다.</p>
         </div>
         <div class="panel">
@@ -123,6 +123,6 @@
 
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </main>
-    <script src="./app.js?v=20261108-operator-queue-scope" type="module"></script>
+    <script src="./app.js?v=20261108-readability-pass" type="module"></script>
   </body>
 </html>

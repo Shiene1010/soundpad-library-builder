@@ -1,6 +1,14 @@
 const SETTINGS_KEY = "soundchunk-settings-v1";
 const USER_KEY = "soundchunk-user-v1";
 const DEMO_APPROVED_KEY = "soundchunk-demo-approved-v1";
+const OPERATOR_REQUEST_REFRESH_MS = 15000;
+const REQUEST_STATUS_LABELS = {
+  new: "새 요청",
+  reviewing: "검토중",
+  approved: "승인",
+  rejected: "거절",
+  draft: "초안",
+};
 
 const defaultUser = {
   email: "",
@@ -20,7 +28,7 @@ const fallbackManifest = {
       version: "2026.11.08",
       count: 0,
       addedCount: 0,
-      summary: "배포 준비 중인 샘플 라이브러리입니다.",
+      summary: "샘플 라이브러리",
       path: "libraries/operator/chunk-library-20261108.clib.json",
     },
   ],
@@ -35,6 +43,7 @@ const state = {
   users: [],
   manifest: fallbackManifest,
   manifestStatus: "idle",
+  requestRefreshTimer: 0,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -121,8 +130,8 @@ function renderUser() {
   const viewState = getViewState();
   const statusText = {
     anonymous: "로그인 필요",
-    pending: "승인 대기",
-    rejected: "승인 거절",
+    pending: "대기",
+    rejected: "사용 불가",
     approved: "승인됨",
     operator: "운영자",
   }[viewState];
@@ -139,23 +148,21 @@ function renderUser() {
   $("account-summary").textContent = state.user.email
     ? state.user.email
     : "로그인 정보가 없습니다.";
-  $("request-setting-text").textContent = state.user.canRequestExpression
-    ? "표현 요청을 사용할 수 있습니다."
-    : "표현 요청은 현재 사용할 수 없습니다.";
+  $("request-setting-text").textContent = state.user.canRequestExpression ? "사용 가능" : "사용 불가";
 }
 
 function renderStatePanel(viewState) {
   const copy = {
     anonymous: {
-      title: "로그인 후 이용할 수 있습니다",
-      body: "계정 전환 버튼으로 로그인해 주세요.",
+      title: "로그인이 필요합니다",
+      body: "계정 전환을 눌러 로그인하세요.",
     },
     pending: {
-      title: "이용 준비 중입니다",
-      body: "잠시 후 다시 확인해 주세요.",
+      title: "대기 중",
+      body: "승인되면 사용할 수 있습니다.",
     },
     rejected: {
-      title: "이 계정은 사용할 수 없습니다",
+      title: "사용할 수 없습니다",
       body: "다른 계정으로 로그인해 주세요.",
     },
     approved: {
@@ -171,6 +178,8 @@ function renderStatePanel(viewState) {
   }[viewState];
   const panel = $("state-panel");
   panel.className = `panel state-panel is-${viewState}`;
+  // Scope: keep status messaging only where it helps the current user act.
+  panel.classList.toggle("hidden", viewState === "approved" || viewState === "operator");
   $("state-title").textContent = copy.title;
   $("state-copy").textContent = copy.body;
 }
@@ -207,8 +216,8 @@ function renderUsers() {
       <div class="action-row user-actions">
         <button class="mini-button" data-user-action="approve" type="button">승인</button>
         <button class="mini-button" data-user-action="reject" type="button">거절</button>
-        <button class="mini-button" data-user-action="enable_requests" type="button">요청 켬</button>
-        <button class="mini-button" data-user-action="disable_requests" type="button">요청 끔</button>
+        <button class="mini-button" data-user-action="enable_requests" type="button">요청 ON</button>
+        <button class="mini-button" data-user-action="disable_requests" type="button">요청 OFF</button>
       </div>
     `;
     card.querySelectorAll("[data-user-action]").forEach((button) => {
@@ -234,7 +243,7 @@ function renderLibraries() {
   if (!canOpenView("library")) {
     const pending = document.createElement("article");
     pending.className = "panel library-card";
-    pending.innerHTML = "<h3>사용 가능한 라이브러리가 없습니다</h3><p>이용 가능 상태가 되면 여기에 표시됩니다.</p>";
+    pending.innerHTML = "<h3>준비 중</h3>";
     list.append(pending);
     return;
   }
@@ -243,7 +252,7 @@ function renderLibraries() {
     warning.className = "panel library-card";
     warning.innerHTML = `
       <h3>최신 정보 확인 실패</h3>
-      <p>네트워크 또는 manifest 설정을 확인하세요. 아래에는 데모용 기본 정보가 표시됩니다.</p>
+      <p>잠시 후 다시 시도하세요.</p>
     `;
     list.append(warning);
   }
@@ -278,7 +287,7 @@ function renderRequests() {
   if (state.requests.length === 0) {
     const empty = document.createElement("article");
     empty.className = "panel library-card";
-    empty.innerHTML = "<h3>요청 없음</h3><p>요청 권한이 켜진 사용자가 표현을 올리면 여기에 쌓입니다.</p>";
+    empty.innerHTML = "<h3>요청 없음</h3>";
     list.append(empty);
     return;
   }
@@ -289,15 +298,15 @@ function renderRequests() {
       <h3>${escapeHtml(request.text)}</h3>
       <p>${escapeHtml(request.context || "상황 설명 없음")}</p>
       <div class="meta">
-        <span>${escapeHtml(request.status)}</span>
+        <span>${escapeHtml(REQUEST_STATUS_LABELS[request.status] || request.status || "새 요청")}</span>
         <span>${escapeHtml(new Date(request.createdAt).toLocaleString())}</span>
       </div>
       <div class="action-row">
-        <button class="mini-button" data-request-action="reviewing" data-request-id="${escapeHtml(request.id)}" type="button">검토중</button>
+        <button class="mini-button" data-request-action="reviewing" data-request-id="${escapeHtml(request.id)}" type="button">검토</button>
         <button class="mini-button" data-request-action="approved" data-request-id="${escapeHtml(request.id)}" type="button">승인</button>
         <button class="mini-button" data-request-action="rejected" data-request-id="${escapeHtml(request.id)}" type="button">거절</button>
-        <button class="mini-button" data-request-action="draft" data-request-id="${escapeHtml(request.id)}" type="button">수동초안</button>
-        <button class="mini-button" data-request-action="gemini" data-request-id="${escapeHtml(request.id)}" type="button">Gemini</button>
+        <button class="mini-button" data-request-action="draft" data-request-id="${escapeHtml(request.id)}" type="button">초안</button>
+        <button class="mini-button" data-request-action="gemini" data-request-id="${escapeHtml(request.id)}" type="button">AI</button>
       </div>
       ${request.validation ? renderValidation(request.validation) : ""}
       ${request.draft ? `<pre class="draft-preview">${escapeHtml(JSON.stringify(request.draft, null, 2))}</pre>` : ""}
@@ -416,7 +425,7 @@ async function publishLibrary() {
       libraryPath: buildLibraryPath(),
     }),
   });
-  const data = await res.json();
+  const data = await readJson(res);
   if (!res.ok) throw new Error(data.error || "publish_failed");
   return data;
 }
@@ -424,8 +433,8 @@ async function publishLibrary() {
 async function loadServerUser() {
   try {
     const res = await fetch("/api/me", { cache: "no-store" });
-    if (!res.ok) throw new Error("identity_fetch_failed");
-    const serverUser = await res.json();
+    const serverUser = await readJson(res);
+    if (!res.ok) throw new Error(serverUser.error || "identity_fetch_failed");
     state.user = {
       ...defaultUser,
       email: serverUser.email || "",
@@ -441,12 +450,29 @@ async function loadServerUser() {
   }
   renderUser();
   if (state.user.role === "operator") {
+    startOperatorRequestRefresh();
     await loadUsers();
     await loadRequests();
+  } else {
+    stopOperatorRequestRefresh();
   }
 }
 
-async function loadRequests() {
+function startOperatorRequestRefresh() {
+  if (state.requestRefreshTimer) return;
+  // Scope: keep the operator queue fresh while avoiding noisy network polling.
+  state.requestRefreshTimer = window.setInterval(() => {
+    if (state.user.role === "operator" && !document.hidden) void loadRequests({ quiet: true });
+  }, OPERATOR_REQUEST_REFRESH_MS);
+}
+
+function stopOperatorRequestRefresh() {
+  if (!state.requestRefreshTimer) return;
+  window.clearInterval(state.requestRefreshTimer);
+  state.requestRefreshTimer = 0;
+}
+
+async function loadRequests(options = {}) {
   // Scope: only operators can inspect the shared REQUESTS_KV queue.
   if (state.user.role !== "operator") {
     state.requests = [];
@@ -455,12 +481,12 @@ async function loadRequests() {
   }
   try {
     const res = await fetch("/api/requests", { cache: "no-store" });
-    if (!res.ok) throw new Error("requests_fetch_failed");
-    const data = await res.json();
+    const data = await readJson(res);
+    if (!res.ok) throw new Error(data.error || "requests_fetch_failed");
     state.requests = Array.isArray(data.requests) ? data.requests : [];
   } catch {
     state.requests = [];
-    toast("요청 목록을 불러오지 못했습니다.");
+    if (!options.quiet) toast("요청 목록을 불러오지 못했습니다.");
   }
   renderRequests();
 }
@@ -468,8 +494,8 @@ async function loadRequests() {
 async function loadUsers() {
   try {
     const res = await fetch("/api/users", { cache: "no-store" });
-    if (!res.ok) throw new Error("users_fetch_failed");
-    const data = await res.json();
+    const data = await readJson(res);
+    if (!res.ok) throw new Error(data.error || "users_fetch_failed");
     state.users = Array.isArray(data.users) ? data.users : [];
   } catch {
     state.users = [];
@@ -484,7 +510,7 @@ async function updateUserAccess(email, action) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ email, action }),
   });
-  const data = await res.json();
+  const data = await readJson(res);
   if (!res.ok) throw new Error(data.error || `user_update_failed_${res.status}`);
   await loadUsers();
 }
@@ -495,7 +521,7 @@ async function createExpressionRequest(text, context) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ text, context }),
   });
-  const data = await res.json();
+  const data = await readJson(res);
   if (!res.ok) throw new Error(data.error || `request_create_failed_${res.status}`);
   return data.request;
 }
@@ -506,7 +532,7 @@ async function updateExpressionRequest(id, action, patch = {}) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ id, action, ...patch }),
   });
-  const data = await res.json();
+  const data = await readJson(res);
   if (!res.ok) throw new Error(data.error || `request_update_failed_${res.status}`);
   await loadRequests();
   return data.request;
@@ -522,7 +548,7 @@ async function buildGeminiDraft(request) {
       context: request.context,
     }),
   });
-  const data = await res.json();
+  const data = await readJson(res);
   if (!res.ok) throw new Error(data.error || "gemini_failed");
   return data.draft;
 }
@@ -537,6 +563,17 @@ function escapeHtml(value) {
   })[char]);
 }
 
+async function readJson(res) {
+  try {
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) return { error: "unexpected_response" };
+    const data = await res.json();
+    return data && typeof data === "object" ? data : {};
+  } catch {
+    return { error: "invalid_json_response" };
+  }
+}
+
 async function checkUpdates() {
   if (state.user.status !== "approved") {
     renderLibraries();
@@ -544,8 +581,9 @@ async function checkUpdates() {
   }
   try {
     const res = await fetch("./libraries/manifest.json", { cache: "no-store" });
-    if (!res.ok) throw new Error("manifest_fetch_failed");
-    state.manifest = await res.json();
+    const manifest = await readJson(res);
+    if (!res.ok || manifest.error) throw new Error(manifest.error || "manifest_fetch_failed");
+    state.manifest = manifest;
     state.manifestStatus = "loaded";
   } catch {
     state.manifest = fallbackManifest;
@@ -638,6 +676,7 @@ function bindEvents() {
       .then(() => {
         form.reset();
         toast("요청을 보냈습니다.");
+        if (state.user.role === "operator") void loadRequests();
       })
       .catch((error) => toast(`요청 실패: ${getErrorMessage(error)}`));
   });
@@ -680,13 +719,18 @@ function bindEvents() {
     const id = button.dataset.requestId;
     const action = button.dataset.requestAction;
     const request = state.requests.find((item) => item.id === id);
-    if (!request) return;
+    if (!request) {
+      toast("요청을 다시 불러와 주세요.");
+      return;
+    }
+    button.disabled = true;
     if (action === "draft") {
       const draft = buildDraft(request);
       const validation = validateDraft(draft);
       updateExpressionRequest(id, "save_draft", { draft, validation })
         .then(() => toast("초안을 저장했습니다."))
-        .catch((error) => toast(`초안 저장 실패: ${getErrorMessage(error)}`));
+        .catch((error) => toast(`초안 저장 실패: ${getErrorMessage(error)}`))
+        .finally(() => { button.disabled = false; });
       return;
     }
     if (action === "gemini") {
@@ -706,12 +750,14 @@ function bindEvents() {
           updateExpressionRequest(id, "save_draft", { draft, validation })
             .then(() => toast("수동 초안을 저장했습니다."))
             .catch((saveError) => toast(`초안 저장 실패: ${getErrorMessage(saveError)}`));
-        });
+        })
+        .finally(() => { button.disabled = false; });
       return;
     }
     updateExpressionRequest(id, action)
       .then(() => toast("요청 상태를 바꿨습니다."))
-      .catch((error) => toast(`상태 변경 실패: ${getErrorMessage(error)}`));
+      .catch((error) => toast(`상태 변경 실패: ${getErrorMessage(error)}`))
+      .finally(() => { button.disabled = false; });
   });
 }
 
