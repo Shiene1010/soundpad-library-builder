@@ -152,6 +152,36 @@ p {
   font-size: 12px;
 }
 
+.action-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.mini-button {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.draft-preview {
+  overflow: auto;
+  max-height: 220px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #101214;
+  color: var(--muted);
+  padding: 10px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .form {
   display: grid;
   gap: 12px;

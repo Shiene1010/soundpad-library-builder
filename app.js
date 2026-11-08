@@ -149,9 +149,42 @@ function renderRequests() {
         <span>${escapeHtml(request.status)}</span>
         <span>${escapeHtml(new Date(request.createdAt).toLocaleString())}</span>
       </div>
+      <div class="action-row">
+        <button class="mini-button" data-request-action="reviewing" data-request-id="${escapeHtml(request.id)}" type="button">검토중</button>
+        <button class="mini-button" data-request-action="approved" data-request-id="${escapeHtml(request.id)}" type="button">승인</button>
+        <button class="mini-button" data-request-action="rejected" data-request-id="${escapeHtml(request.id)}" type="button">거절</button>
+        <button class="mini-button" data-request-action="draft" data-request-id="${escapeHtml(request.id)}" type="button">초안</button>
+      </div>
+      ${request.draft ? `<pre class="draft-preview">${escapeHtml(JSON.stringify(request.draft, null, 2))}</pre>` : ""}
     `;
     list.append(card);
   }
+}
+
+function saveRequests() {
+  saveJson(REQUESTS_KEY, state.requests);
+}
+
+function updateRequest(id, patch) {
+  state.requests = state.requests.map((request) => (
+    request.id === id ? { ...request, ...patch, updatedAt: new Date().toISOString() } : request
+  ));
+  saveRequests();
+  renderRequests();
+}
+
+function buildDraft(request) {
+  const slug = request.text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "expression";
+  return {
+    id: `expr-${slug}`,
+    text: request.text,
+    chunks: [
+      { text: request.text, hint: "운영자가 Gemini 초안으로 쪼갤 표현" },
+    ],
+    tones: [],
+    ccq: [],
+    sourceRequestId: request.id,
+  };
 }
 
 function escapeHtml(value) {
@@ -255,7 +288,7 @@ function bindEvents() {
       status: "new",
       createdAt: new Date().toISOString(),
     });
-    saveJson(REQUESTS_KEY, state.requests);
+    saveRequests();
     renderRequests();
     event.currentTarget.reset();
     toast("표현 요청을 로컬 큐에 저장했습니다.");
@@ -266,9 +299,24 @@ function bindEvents() {
   });
   $("clear-requests").addEventListener("click", () => {
     state.requests = [];
-    saveJson(REQUESTS_KEY, state.requests);
+    saveRequests();
     renderRequests();
     toast("로컬 요청 큐를 비웠습니다.");
+  });
+  $("request-list").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-request-action]");
+    if (!button) return;
+    const id = button.dataset.requestId;
+    const action = button.dataset.requestAction;
+    const request = state.requests.find((item) => item.id === id);
+    if (!request) return;
+    if (action === "draft") {
+      updateRequest(id, { status: "draft", draft: buildDraft(request) });
+      toast("라이브러리 초안을 만들었습니다.");
+      return;
+    }
+    updateRequest(id, { status: action });
+    toast(`요청 상태를 ${action}로 바꿨습니다.`);
   });
 }
 
