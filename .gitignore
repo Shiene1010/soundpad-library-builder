@@ -1,0 +1,29 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Dependency folders
+node_modules/
+.venv/
+venv/
+
+# Build outputs and caches
+dist/
+build/
+.next/
+.turbo/
+.cache/
+coverage/
+*.log
+
+# macOS and editor files
+.DS_Store
+.vscode/
+.idea/
+
+# Generated library drafts that may contain private operator data
+exports/
+tmp/
+*.local.clib.json
+

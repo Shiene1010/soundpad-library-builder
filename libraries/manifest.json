@@ -1,0 +1,16 @@
+{
+  "updated": "2026-11-08",
+  "latestVersion": "2026.11.08",
+  "libraries": [
+    {
+      "id": "daily-chunk-20261108",
+      "title": "Daily Chunk Pack",
+      "version": "2026.11.08",
+      "path": "libraries/operator/chunk-library-20261108.clib.json",
+      "count": 0,
+      "addedCount": 0,
+      "summary": "운영자 배포 준비용 샘플 라이브러리입니다.",
+      "publishedAt": "2026-11-08T09:00:00+09:00"
+    }
+  ]
+}
