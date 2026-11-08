@@ -13,8 +13,22 @@ Required Cloudflare environment variables:
 - `GITHUB_TOKEN`
 - `GITHUB_REPOSITORY_ID`
 - `GITHUB_DISCUSSION_CATEGORY_ID`
+- `GEMINI_API_KEY`
+- `OPERATOR_EMAILS`
+- `APPROVED_USER_EMAILS`
+- `REQUEST_ENABLED_EMAILS`
 
 The token should be fine-grained where possible and limited to the target repository. Enable GitHub Discussions on the repository before deployment.
+
+## Cloudflare Access Operator Gate
+
+Protect the Pages project with Cloudflare Access and Google login before enabling operator publishing. The publish Function reads the authenticated Access identity through `ctx.access.getIdentity()` when available and falls back to the `Cf-Access-Authenticated-User-Email` header. Only emails listed in comma-separated `OPERATOR_EMAILS` may call `/api/publish-library`.
+
+User approval lists are also environment-driven for the current slice:
+
+- `APPROVED_USER_EMAILS`: approved users who can use the service.
+- `REQUEST_ENABLED_EMAILS`: users allowed to submit expression requests.
+- `OPERATOR_EMAILS`: operators who can publish libraries.
 
 ## Deploy Steps
 

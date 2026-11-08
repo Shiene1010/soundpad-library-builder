@@ -10,6 +10,11 @@ export async function onRequestPost(context) {
     const input = await context.request.json();
     if (!env.GITHUB_TOKEN) return json({ error: "github_not_configured", traceId }, 503);
 
+    const operatorEmail = await getOperatorEmail(context);
+    if (!isAllowedOperator(operatorEmail, env.OPERATOR_EMAILS)) {
+      return json({ error: "operator_access_required", traceId }, 403);
+    }
+
     const library = input.library;
     const manifest = input.manifest;
     const libraryPath = sanitizePath(input.libraryPath);
@@ -19,10 +24,26 @@ export async function onRequestPost(context) {
     const libraryResult = await putFile(env.GITHUB_TOKEN, libraryPath, library, `Publish ${libraryPath}`, traceId);
     const manifestResult = await putFile(env.GITHUB_TOKEN, manifestPath, manifest, "Update library manifest", traceId);
 
-    return json({ library: libraryResult, manifest: manifestResult, traceId });
+    return json({ library: libraryResult, manifest: manifestResult, operatorEmail, traceId });
   } catch (error) {
     return json({ error: "publish_unhandled_error", traceId, message: sanitizeText(error?.message || String(error), 180) }, 500);
   }
+}
+
+async function getOperatorEmail(context) {
+  const accessIdentity = await context.access?.getIdentity?.();
+  const accessEmail = sanitizeEmail(accessIdentity?.email);
+  if (accessEmail) return accessEmail;
+  return sanitizeEmail(context.request.headers.get("cf-access-authenticated-user-email"));
+}
+
+function isAllowedOperator(email, allowlist) {
+  if (!email) return false;
+  const allowed = String(allowlist || "")
+    .split(",")
+    .map((item) => sanitizeEmail(item))
+    .filter(Boolean);
+  return allowed.includes(email);
 }
 
 async function putFile(token, path, data, message, traceId) {
@@ -72,6 +93,10 @@ function sanitizePath(path) {
 
 function sanitizeText(value, limit) {
   return String(value || "").replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, limit);
+}
+
+function sanitizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
 }
 
 function json(data, status = 200) {

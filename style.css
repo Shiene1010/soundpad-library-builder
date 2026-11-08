@@ -118,6 +118,11 @@ p {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 .tab {
   min-height: 40px;
   border-radius: 8px;

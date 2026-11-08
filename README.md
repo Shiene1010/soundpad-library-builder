@@ -11,9 +11,11 @@ This repository is an early static-first prototype. It currently demonstrates:
 - expression request UI gated by a local demo approval flag
 - feedback submission through a Cloudflare Pages Function
 - GitHub Discussions creation for user feedback
+- Gemini draft generation and GitHub library publishing through server-side Functions
+- operator-only publish gate using Cloudflare Access identity and `OPERATOR_EMAILS`
 - May-led agent workflow, OKR, and observability documentation
 
-Production authentication, Gemini generation, GitHub library publishing, and persistent request storage are planned but not yet implemented.
+Persistent request storage and full user administration are planned but not yet implemented.
 
 Public demo:
 
@@ -70,6 +72,7 @@ Check JavaScript syntax:
 ```sh
 node --check app.js
 node --check functions/api/feedback.js
+node --check functions/api/me.js
 ```
 
 ## Configuration
@@ -82,10 +85,14 @@ Important variables:
 - `GITHUB_REPOSITORY_ID`
 - `GITHUB_DISCUSSION_CATEGORY_ID`
 - `GEMINI_API_KEY`
+- `OPERATOR_EMAILS`
+- `APPROVED_USER_EMAILS`
+- `REQUEST_ENABLED_EMAILS`
 - `GA_MEASUREMENT_ID`
 - `SENTRY_DSN`
 
 Production secrets should live in Cloudflare project settings or an equivalent secret store, not in browser code.
+Protect the Cloudflare Pages app with Cloudflare Access before enabling public operator workflows. `/api/publish-library` requires an authenticated Access email listed in `OPERATOR_EMAILS`.
 
 ## Deployment
 
@@ -99,7 +106,7 @@ See [docs/deployment.md](docs/deployment.md) for setup steps. Prefer Git-connect
 
 Public files may include source code, docs, `.env.example`, and library artifacts under `libraries/`. Do not commit API keys, tokens, raw user emails, private expression request text, logs, local exports, or `.env` files.
 
-Feedback is intended to flow through `functions/api/feedback.js` so GitHub tokens remain server-side. Current feedback identity handling is still prototype-level and must be hardened before public deployment.
+Feedback flows through `functions/api/feedback.js` so GitHub tokens remain server-side. GitHub library publishing flows through `functions/api/publish-library.js`, which rejects unauthenticated or non-operator callers before using the GitHub token.
 The deployed Cloudflare Function currently creates GitHub Discussions successfully, using anonymous metadata and a trace ID.
 
 ## Agent Workflow

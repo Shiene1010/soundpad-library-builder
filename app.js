@@ -5,6 +5,7 @@ const REQUESTS_KEY = "soundchunk-expression-requests-v1";
 
 const defaultUser = {
   email: "",
+  role: "anonymous",
   status: "pending",
   canRequestExpression: false,
   lastSeenLibraryVersion: "",
@@ -93,11 +94,13 @@ function showView(name) {
 
 function renderUser() {
   const approved = state.user.status === "approved";
+  const operator = state.user.role === "operator";
   $("user-status").textContent = approved ? "승인됨" : "승인 대기";
   $("request-permission").textContent = state.user.canRequestExpression ? "요청 가능" : "요청 꺼짐";
   $("request-form").querySelector("button").disabled = !approved || !state.user.canRequestExpression;
+  $("publish-library").disabled = !operator;
   $("request-setting-text").textContent = state.user.canRequestExpression
-    ? "현재 운영자가 표현 요청 기능을 켜두었습니다."
+    ? `${operator ? "운영자 권한입니다." : "현재 운영자가 표현 요청 기능을 켜두었습니다."}`
     : "현재 운영자가 표현 요청 기능을 꺼두었습니다.";
 }
 
@@ -272,6 +275,7 @@ function downloadJson(filename, data) {
 }
 
 async function publishLibrary() {
+  if (state.user.role !== "operator") throw new Error("operator_access_required");
   const library = buildLibraryExport();
   const manifest = buildManifestPreview(library);
   if (library.count === 0) throw new Error("empty_library");
@@ -287,6 +291,25 @@ async function publishLibrary() {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "publish_failed");
   return data;
+}
+
+async function loadServerUser() {
+  try {
+    const res = await fetch("/api/me", { cache: "no-store" });
+    if (!res.ok) throw new Error("identity_fetch_failed");
+    const serverUser = await res.json();
+    state.user = {
+      ...state.user,
+      email: serverUser.email || "",
+      role: serverUser.role || "anonymous",
+      status: serverUser.status || "pending",
+      canRequestExpression: Boolean(serverUser.canRequestExpression),
+    };
+    saveJson(USER_KEY, state.user);
+  } catch {
+    loadDemoUser();
+  }
+  renderUser();
 }
 
 async function buildGeminiDraft(request) {
@@ -438,7 +461,12 @@ function bindEvents() {
     toast("GitHub 배포를 시작합니다.");
     publishLibrary()
       .then(() => toast("GitHub libraries 폴더에 배포했습니다."))
-      .catch((error) => toast(error.message === "empty_library" ? "배포할 초안이 없습니다." : "GitHub 배포에 실패했습니다."));
+      .catch((error) => {
+        const message = error.message === "empty_library"
+          ? "배포할 초안이 없습니다."
+          : "운영자 로그인 후 배포할 수 있습니다.";
+        toast(message);
+      });
   });
   $("request-list").addEventListener("click", (event) => {
     const button = event.target.closest("[data-request-action]");
@@ -479,4 +507,5 @@ bindEvents();
 renderUser();
 renderLibraries();
 renderRequests();
+void loadServerUser();
 void checkUpdates();
