@@ -1,6 +1,7 @@
 const SETTINGS_KEY = "soundchunk-settings-v1";
 const USER_KEY = "soundchunk-user-v1";
 const DEMO_APPROVED_KEY = "soundchunk-demo-approved-v1";
+const REQUESTS_KEY = "soundchunk-expression-requests-v1";
 
 const defaultUser = {
   email: "",
@@ -28,6 +29,7 @@ const fallbackManifest = {
 const state = {
   user: normalizeUser(loadJson(USER_KEY, defaultUser)),
   settings: loadJson(SETTINGS_KEY, { notificationsEnabled: true }),
+  requests: loadArray(REQUESTS_KEY),
   manifest: fallbackManifest,
   manifestStatus: "idle",
 };
@@ -45,6 +47,15 @@ function loadJson(key, fallback) {
 
 function saveJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function loadArray(key) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 function normalizeUser(user) {
@@ -112,6 +123,31 @@ function renderLibraries() {
         <span>버전 ${escapeHtml(item.version)}</span>
         <span>${Number(item.count || 0)}개 표현</span>
         <span>신규 ${Number(item.addedCount || 0)}개</span>
+      </div>
+    `;
+    list.append(card);
+  }
+}
+
+function renderRequests() {
+  const list = $("request-list");
+  list.innerHTML = "";
+  if (state.requests.length === 0) {
+    const empty = document.createElement("article");
+    empty.className = "panel library-card";
+    empty.innerHTML = "<h3>요청 없음</h3><p>요청 권한이 켜진 사용자가 표현을 올리면 여기에 쌓입니다.</p>";
+    list.append(empty);
+    return;
+  }
+  for (const request of state.requests) {
+    const card = document.createElement("article");
+    card.className = "panel library-card";
+    card.innerHTML = `
+      <h3>${escapeHtml(request.text)}</h3>
+      <p>${escapeHtml(request.context || "상황 설명 없음")}</p>
+      <div class="meta">
+        <span>${escapeHtml(request.status)}</span>
+        <span>${escapeHtml(new Date(request.createdAt).toLocaleString())}</span>
       </div>
     `;
     list.append(card);
@@ -209,12 +245,30 @@ function bindEvents() {
       toast("운영자가 표현 요청 기능을 꺼두었습니다.");
       return;
     }
+    const text = $("request-text").value.trim();
+    const context = $("request-context").value.trim();
+    if (!text) return;
+    state.requests.unshift({
+      id: `req-${Date.now()}`,
+      text,
+      context,
+      status: "new",
+      createdAt: new Date().toISOString(),
+    });
+    saveJson(REQUESTS_KEY, state.requests);
+    renderRequests();
     event.currentTarget.reset();
-    toast("표현 요청 초안을 저장했습니다.");
+    toast("표현 요청을 로컬 큐에 저장했습니다.");
   });
   $("feedback-form").addEventListener("submit", (event) => void submitFeedback(event));
   $("operator-demo").addEventListener("click", () => {
     $("operator-summary").classList.toggle("hidden");
+  });
+  $("clear-requests").addEventListener("click", () => {
+    state.requests = [];
+    saveJson(REQUESTS_KEY, state.requests);
+    renderRequests();
+    toast("로컬 요청 큐를 비웠습니다.");
   });
 }
 
@@ -223,4 +277,5 @@ enableDemoApprovalShortcut();
 bindEvents();
 renderUser();
 renderLibraries();
+renderRequests();
 void checkUpdates();
