@@ -266,12 +266,16 @@ function renderLibraries() {
 function renderRequests() {
   const list = $("request-list");
   list.innerHTML = "";
-  if (!canOpenView("requests")) {
+  const operator = state.user.role === "operator";
+  if (!operator && !canOpenView("requests")) {
     const locked = document.createElement("article");
     locked.className = "panel library-card";
     locked.innerHTML = "<h3>표현 요청 비활성화</h3><p>운영자가 요청 권한을 켜면 이 탭에서 익히고 싶은 표현을 보낼 수 있습니다.</p>";
     list.append(locked);
     return;
+  }
+  if ($("request-queue-title")) {
+    $("request-queue-title").textContent = `요청 큐 ${state.requests.length}`;
   }
   if (state.requests.length === 0) {
     const empty = document.createElement("article");
@@ -635,6 +639,7 @@ function bindEvents() {
   });
   $("feedback-form").addEventListener("submit", (event) => void submitFeedback(event));
   $("refresh-users").addEventListener("click", () => void loadUsers());
+  $("refresh-requests").addEventListener("click", () => void loadRequests());
   $("clear-requests").addEventListener("click", () => {
     state.requests = [];
     renderRequests();

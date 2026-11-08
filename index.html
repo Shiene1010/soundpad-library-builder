@@ -108,8 +108,9 @@
           <div id="user-list" class="stack"></div>
         </div>
         <div id="operator-queue-head" class="compact-head hidden">
-          <strong>요청 큐</strong>
+          <strong id="request-queue-title">요청 큐</strong>
           <div class="button-pair">
+            <button id="refresh-requests" class="text-button" type="button">새로고침</button>
             <button id="export-library" class="text-button" type="button">내보내기</button>
             <button id="publish-library" class="text-button" type="button">배포</button>
             <button id="clear-requests" class="text-button" type="button">비우기</button>
@@ -122,6 +123,6 @@
 
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </main>
-    <script src="./app.js?v=20261108-user-minimal-ui" type="module"></script>
+    <script src="./app.js?v=20261108-server-request-queue" type="module"></script>
   </body>
 </html>
