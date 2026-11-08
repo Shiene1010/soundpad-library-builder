@@ -35,20 +35,19 @@
 - GitHub Pages public URL was verified with HTTP 200.
 - Manifest URL was verified with HTTP 200.
 - Cloudflare Pages deployment is live and `/api/feedback` routes to the Function.
-- `/api/feedback` correctly returns `503 feedback_not_configured` until GitHub Discussion variables are added.
+- `/api/feedback` returned HTTP 200 and created GitHub Discussion #1 after environment variables were added.
 
 ## Required Fixes
 
-- Add GitHub Discussion environment variables in Cloudflare.
-- Retest `/api/feedback` after variables are configured.
+- Continue to user/operator flow separation.
 
 ## Backpropagation
 
-- Update node: deployment status now records Cloudflare success and remaining feedback configuration.
+- Update node: deployment status now records Cloudflare success and feedback integration success.
 - Update edge: none
 - Update template: none
 - Update rule: deployment reviews require a verified URL or explicit blocker.
 
 ## Next Iteration
 
-After GitHub Discussion variables are available, verify feedback creates a Discussion.
+Start Sprint 2: Readable Demo Surface.

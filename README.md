@@ -10,7 +10,7 @@ This repository is an early static-first prototype. It currently demonstrates:
 - update notification on/off settings
 - expression request UI gated by a local demo approval flag
 - feedback submission through a Cloudflare Pages Function
-- GitHub Discussions fallback when automated feedback submission is not configured
+- GitHub Discussions creation for user feedback
 - May-led agent workflow, OKR, and observability documentation
 
 Production authentication, Gemini generation, GitHub library publishing, and persistent request storage are planned but not yet implemented.
@@ -100,6 +100,7 @@ See [docs/deployment.md](docs/deployment.md) for setup steps. Prefer Git-connect
 Public files may include source code, docs, `.env.example`, and library artifacts under `libraries/`. Do not commit API keys, tokens, raw user emails, private expression request text, logs, local exports, or `.env` files.
 
 Feedback is intended to flow through `functions/api/feedback.js` so GitHub tokens remain server-side. Current feedback identity handling is still prototype-level and must be hardened before public deployment.
+The deployed Cloudflare Function currently creates GitHub Discussions successfully, using anonymous metadata and a trace ID.
 
 ## Agent Workflow
 

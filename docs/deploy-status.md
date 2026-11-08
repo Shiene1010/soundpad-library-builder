@@ -22,7 +22,7 @@ Repository:
 https://github.com/Shiene1010/soundpad-library-builder
 ```
 
-Cloudflare Pages Functions are deployed. `/api/feedback` currently returns `503 feedback_not_configured` until GitHub Discussions environment variables are configured.
+Cloudflare Pages Functions are deployed. `/api/feedback` creates GitHub Discussions successfully.
 
 ## Verified Locally
 
@@ -35,7 +35,7 @@ Cloudflare Pages Functions are deployed. `/api/feedback` currently returns `503 
 - GitHub Pages manifest returns HTTP 200.
 - Cloudflare Pages root returns HTTP 200.
 - Cloudflare Pages manifest returns HTTP 200.
-- Cloudflare Function `/api/feedback` returns `503 feedback_not_configured`, confirming the route is live.
+- Cloudflare Function `/api/feedback` returned HTTP 200 and created GitHub Discussion #1.
 
 ## Production Deployment Path
 
@@ -56,16 +56,16 @@ Use GitHub-connected Cloudflare Pages:
 
 Direct root upload can accidentally include local files if reviewed poorly. Git-connected deployment respects `.gitignore` and gives a clearer audit trail.
 
-## Remaining Cloudflare Configuration
+## Cloudflare Configuration
 
 - Wrangler is available.
 - Pages project `soundpad-library-builder` exists.
 - Production deployment is live.
-- GitHub Discussions automation still needs these Pages environment variables:
+- GitHub Discussions automation uses these Pages environment variables:
   - `GITHUB_TOKEN`
   - `GITHUB_REPOSITORY_ID`
   - `GITHUB_DISCUSSION_CATEGORY_ID`
 
 ## Next Operator Action
 
-Add the GitHub Discussions environment variables in Cloudflare Pages settings, then redeploy or retry `/api/feedback`.
+Move on to separating user-facing and operator-facing demo flows.
