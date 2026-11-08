@@ -101,6 +101,9 @@ function renderUser() {
   $("request-form").querySelector("button").disabled = !approved || !state.user.canRequestExpression;
   $("publish-library").disabled = !operator;
   $("user-admin").classList.toggle("hidden", !operator);
+  $("account-summary").textContent = state.user.email
+    ? `${state.user.email} · ${state.user.role} · ${state.user.status}`
+    : "Cloudflare Access 로그인 정보가 없습니다. 배포 URL에서 로그인해야 승인 대기에 등록됩니다.";
   $("request-setting-text").textContent = state.user.canRequestExpression
     ? `${operator ? "운영자 권한입니다." : "현재 운영자가 표현 요청 기능을 켜두었습니다."}`
     : "현재 운영자가 표현 요청 기능을 꺼두었습니다.";
@@ -482,6 +485,9 @@ function bindEvents() {
     state.settings.notificationsEnabled = event.target.checked;
     saveJson(SETTINGS_KEY, state.settings);
     toast(event.target.checked ? "알림을 켰습니다." : "알림을 껐습니다.");
+  });
+  $("switch-account").addEventListener("click", () => {
+    window.location.href = "/cdn-cgi/access/logout";
   });
   $("check-updates").addEventListener("click", () => void checkUpdates());
   $("request-form").addEventListener("submit", (event) => {
