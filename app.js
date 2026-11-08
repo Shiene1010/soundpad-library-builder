@@ -222,6 +222,29 @@ function renderValidation(validation) {
   return `<div class="validation ${validation.ok ? "is-ok" : "is-warn"}"><strong>${validation.ok ? "검증 통과" : "검증 필요"}</strong><ul>${items}</ul></div>`;
 }
 
+function buildLibraryExport() {
+  const expressions = state.requests
+    .filter((request) => request.draft)
+    .map((request) => request.draft);
+  return {
+    type: "sound-chunk-library",
+    version: "0.1.0",
+    updated: new Date().toISOString(),
+    count: expressions.length,
+    expressions,
+  };
+}
+
+function downloadJson(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 async function buildGeminiDraft(request) {
   const res = await fetch("/api/gemini-draft", {
     method: "POST",
@@ -352,6 +375,17 @@ function bindEvents() {
     saveRequests();
     renderRequests();
     toast("로컬 요청 큐를 비웠습니다.");
+  });
+  $("export-library").addEventListener("click", () => {
+    const library = buildLibraryExport();
+    $("export-preview").textContent = JSON.stringify(library, null, 2);
+    $("export-preview").classList.remove("hidden");
+    if (library.count === 0) {
+      toast("내보낼 초안이 없습니다.");
+      return;
+    }
+    downloadJson(`chunk-library-${new Date().toISOString().slice(0, 10)}.clib.json`, library);
+    toast("라이브러리 JSON을 내보냈습니다.");
   });
   $("request-list").addEventListener("click", (event) => {
     const button = event.target.closest("[data-request-action]");
