@@ -50,8 +50,10 @@ export async function onRequestPost(context) {
     const raw = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
     const draft = JSON.parse(raw);
     return json({ draft, traceId });
-  } catch {
-    return json({ error: "gemini_unhandled_error", traceId }, 500);
+  } catch (error) {
+    const message = sanitizeText(error?.message || String(error), 160);
+    const isTimeout = message.includes("abort") || message.includes("timeout") || String(error).includes("gemini_timeout");
+    return json({ error: isTimeout ? "gemini_timeout" : "gemini_unhandled_error", traceId, message }, isTimeout ? 504 : 500);
   }
 }
 
