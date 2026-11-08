@@ -1,8 +1,8 @@
 {
   "type": "sound-chunk-library",
   "version": "0.1.0",
-  "updated": "2026-11-08T04:20:11.031Z",
-  "count": 1,
+  "updated": "2026-11-08T04:23:45.044Z",
+  "count": 2,
   "expressions": [
     {
       "id": "expr-i-am-running-late",
@@ -55,6 +55,58 @@
         }
       ],
       "sourceRequestId": "publish-test"
+    },
+    {
+      "id": "sound-chunk-moon-pull",
+      "text": "There’s enough pull here to take me to the moon!",
+      "level": "intermediate",
+      "chunks": [
+        {
+          "text": "There’s enough pull here",
+          "hint": "여기 끌어당기는 힘이 충분해서"
+        },
+        {
+          "text": "to take me to the moon!",
+          "hint": "달까지도 날려 보내겠어요!"
+        }
+      ],
+      "tones": [
+        {
+          "key": "playful",
+          "emoji": "🚀",
+          "label": "장난스럽고 신나게",
+          "pitch": 1.15,
+          "rate": 1.05,
+          "text": "There’s enough pull here to take me to the moon!"
+        },
+        {
+          "key": "dramatic",
+          "emoji": "😲",
+          "label": "과장되고 극적으로",
+          "pitch": 1.25,
+          "rate": 0.95,
+          "text": "There’s enough pull here to take me to the moon!"
+        },
+        {
+          "key": "wry",
+          "emoji": "😏",
+          "label": "능청스럽고 위트 있게",
+          "pitch": 0.95,
+          "rate": 1,
+          "text": "There’s enough pull here to take me to the moon!"
+        }
+      ],
+      "ccq": [
+        {
+          "question": "Does the speaker literally expect to travel to outer space?",
+          "answer": "no"
+        },
+        {
+          "question": "Is the speaker playfully exaggerating how strong the attraction or momentum is?",
+          "answer": "yes"
+        }
+      ],
+      "sourceRequestId": "moon-pull-scenario"
     }
   ]
 }
