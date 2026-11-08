@@ -37,7 +37,8 @@ textarea {
 
 .topbar,
 .section-head,
-.setting-row {
+.setting-row,
+.compact-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -172,7 +173,12 @@ button:disabled {
 
 .library-card {
   display: grid;
-  gap: 8px;
+  gap: 7px;
+}
+
+.library-card h3 {
+  overflow-wrap: anywhere;
+  font-size: 15px;
 }
 
 .meta {
@@ -189,6 +195,10 @@ button:disabled {
   gap: 6px;
 }
 
+.user-actions {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .mini-button {
   min-height: 34px;
   border: 1px solid var(--line);
@@ -198,6 +208,10 @@ button:disabled {
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
+}
+
+.compact-head {
+  min-height: 34px;
 }
 
 .draft-preview {
@@ -294,13 +308,6 @@ textarea {
 .muted {
   color: var(--muted);
   font-size: 12px;
-}
-
-.operator-panel {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 12px;
 }
 
 .ordered {
