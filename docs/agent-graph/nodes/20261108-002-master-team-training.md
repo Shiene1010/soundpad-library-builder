@@ -35,6 +35,20 @@ This project combines mobile web UX, approved-user access, expression request wo
 6. **Backpropagate**: May updates the source node, templates, or rules.
 7. **Repeat**: The next node starts with lessons from the previous review.
 
+## Issue Improvement Loop
+
+When a user reports an issue, May must run a stricter graph loop:
+
+1. Create an **issue node** that states the symptom, affected role, expected behavior, and observed evidence.
+2. Create a **before-fix edge** from the issue to the planned solution, including the failing evidence.
+3. Create a **solution node** that names the smallest fix and the verification plan.
+4. Create an **after-fix edge** with the same evidence type used before the fix.
+5. Review the before/after delta and backpropagate one concrete rule into a template, node, or checklist.
+
+No issue-driven change is considered mastered until the after-fix edge proves improvement and the review records what the team learned.
+
+For UI defects, the after-fix edge must verify the same user role, screen, viewport class, and visible outcome as the before-fix edge. Command output can support the conclusion, but it cannot replace role-specific UI evidence.
+
 ## Role Drills
 
 ### May
@@ -74,11 +88,13 @@ The team reaches "master" operating level when it completes three consecutive sl
 - readability score is at least 4/5,
 - every action has an edge file,
 - every review causes a specific upstream update,
+- every issue-driven change has an issue node, before-fix edge, solution node, after-fix edge, and review,
+- every after-fix edge compares against the same evidence type as its before-fix edge,
 - no secret or personal data is exposed.
 
 ## Current State
 
-The team has the graph protocol and kickoff directives. The next training slice should be the security posture patch.
+The team has the graph protocol, kickoff directives, and the first issue improvement cycle for the request queue visibility bug. The next training slice should reuse this pattern for any auth, request, publishing, or mobile UI defect.
 
 ## Open Questions
 
@@ -88,3 +104,7 @@ The team has the graph protocol and kickoff directives. The next training slice 
 ## Backpropagation Notes
 
 Training rule: if a review finds a repeated mistake, May must update a template so the same mistake is harder to repeat.
+
+Queue/storage rule: server state verification is not enough for user-facing workflow bugs. The team must also verify that the right role sees the right mobile UI state.
+
+Request queue rule: the next queue-related change is blocked until the team captures operator-visible queue evidence and approved-user no-leak evidence.

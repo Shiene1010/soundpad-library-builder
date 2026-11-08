@@ -3,7 +3,7 @@
 ## Metadata
 
 - id:
-- type: task | artifact | decision | agent | requirement | review-result
+- type: task | artifact | decision | agent | requirement | issue | solution | review-result
 - owner: May | Performer | Readability | Fixer
 - status: proposed | active | blocked | complete | superseded
 - created:
@@ -26,6 +26,28 @@ List relevant files, prior nodes, assumptions, and constraints.
 ## Current State
 
 Describe the latest known state. Keep this factual and update it after reviews.
+
+## Issue Fields
+
+Use this section when `type: issue`.
+
+- symptom:
+- user-impact:
+- reproduction:
+- expected-behavior:
+- actual-behavior:
+- suspected-owner: May | Performer | Readability | Fixer
+- severity: low | medium | high | critical
+
+## Solution Fields
+
+Use this section when `type: solution`.
+
+- fixes-issue:
+- implementation-summary:
+- files-changed:
+- verification:
+- rollout-status:
 
 ## Open Questions
 

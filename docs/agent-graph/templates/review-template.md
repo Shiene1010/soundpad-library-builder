@@ -34,6 +34,17 @@
 - Finding 1
 - Finding 2
 
+## Issue Improvement Review
+
+- issue-node:
+- solution-node:
+- before-edge:
+- after-edge:
+- improved: yes | no | partial
+- recurrence-risk: low | medium | high
+- agent-learning:
+- organization-learning:
+
 ## Required Fixes
 
 - Fix 1

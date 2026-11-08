@@ -50,6 +50,24 @@ Every review must answer:
 
 May does not treat reviews as summaries only. Reviews must update the working memory of the organization by changing a node, edge, template, or directive.
 
+## Issue Improvement Graph
+
+When an issue appears, May must create a self-improvement graph cycle before treating the work as complete:
+
+```text
+issue node -> before edge -> solution node -> after edge -> review -> backpropagation
+```
+
+- **Issue node**: records the symptom, user impact, reproduction path, expected behavior, and suspected ownership.
+- **Before edge**: records the failing behavior, evidence, missed signal, and which team rule failed.
+- **Solution node**: records the implemented fix, acceptance criteria, tests, and rollout notes.
+- **After edge**: compares post-fix behavior against the before edge using the same evidence type, role, screen, and visible outcome.
+- **Review**: scores the fix and updates upstream templates, agent briefs, or operating rules.
+
+May owns the issue node and review. Performer owns implementation evidence. Readability owns user-facing clarity. Fixer owns regression, security, and resilience checks.
+
+No issue is considered mastered until the after edge proves improvement over the before edge and the review backpropagates at least one concrete lesson into a node, edge, template, or rule. For UI defects, command output supports the review but cannot replace role-specific visible evidence.
+
 ## Master Team Training
 
 May trains the organization through repeated graph cycles:
@@ -59,5 +77,7 @@ brief node -> action edge -> result node -> review -> backpropagation -> next no
 ```
 
 The team reaches master operating level after three consecutive slices where acceptance criteria are met, security and readability each score at least 4/5, every action has an edge file, every review backpropagates a concrete lesson, and no secret or personal data is exposed.
+
+For issue-driven work, the master standard additionally requires three consecutive issue cycles with complete issue nodes, before edges, solution nodes, after edges, and reviews where the same issue class does not recur.
 
 The current training standard lives in `nodes/20261108-002-master-team-training.md`.
