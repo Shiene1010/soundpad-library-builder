@@ -27,8 +27,10 @@ const fallbackManifest = {
   ],
 };
 
+const savedUserProgress = loadJson(USER_KEY, { lastSeenLibraryVersion: "" });
+
 const state = {
-  user: normalizeUser(loadJson(USER_KEY, defaultUser)),
+  user: { ...defaultUser, lastSeenLibraryVersion: savedUserProgress.lastSeenLibraryVersion || "" },
   settings: loadJson(SETTINGS_KEY, { notificationsEnabled: true }),
   requests: loadArray(REQUESTS_KEY),
   users: [],
@@ -49,6 +51,10 @@ function loadJson(key, fallback) {
 
 function saveJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function removeJson(key) {
+  localStorage.removeItem(key);
 }
 
 function loadArray(key) {
@@ -357,14 +363,16 @@ async function loadServerUser() {
     if (!res.ok) throw new Error("identity_fetch_failed");
     const serverUser = await res.json();
     state.user = {
-      ...state.user,
+      ...defaultUser,
       email: serverUser.email || "",
       role: serverUser.role || "anonymous",
       status: serverUser.status || "pending",
       canRequestExpression: Boolean(serverUser.canRequestExpression),
+      lastSeenLibraryVersion: state.user.lastSeenLibraryVersion,
     };
-    saveJson(USER_KEY, state.user);
+    if (state.user.email) saveJson(USER_KEY, { lastSeenLibraryVersion: state.user.lastSeenLibraryVersion });
   } catch {
+    state.user = { ...defaultUser };
     loadDemoUser();
   }
   renderUser();
@@ -499,6 +507,7 @@ function bindEvents() {
     toast(event.target.checked ? "알림을 켰습니다." : "알림을 껐습니다.");
   });
   $("switch-account").addEventListener("click", () => {
+    removeJson(USER_KEY);
     window.location.href = "/cdn-cgi/access/logout";
   });
   $("check-updates").addEventListener("click", () => void checkUpdates());
