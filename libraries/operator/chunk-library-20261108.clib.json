@@ -1,0 +1,60 @@
+{
+  "type": "sound-chunk-library",
+  "version": "0.1.0",
+  "updated": "2026-11-08T04:20:11.031Z",
+  "count": 1,
+  "expressions": [
+    {
+      "id": "expr-i-am-running-late",
+      "text": "I am running late",
+      "level": "A2",
+      "chunks": [
+        {
+          "text": "I am",
+          "hint": "지금 제가"
+        },
+        {
+          "text": "running late",
+          "hint": "늦고 있어요"
+        }
+      ],
+      "tones": [
+        {
+          "key": "calm",
+          "emoji": "💬",
+          "label": "차분한",
+          "pitch": 1,
+          "rate": 0.95,
+          "text": "I am running late."
+        },
+        {
+          "key": "hurried",
+          "emoji": "🏃",
+          "label": "다급한",
+          "pitch": 1.1,
+          "rate": 1.1,
+          "text": "I am running late!"
+        },
+        {
+          "key": "sorry",
+          "emoji": "🙇",
+          "label": "미안한",
+          "pitch": 0.95,
+          "rate": 0.9,
+          "text": "I am running late."
+        }
+      ],
+      "ccq": [
+        {
+          "answer": "yes",
+          "question": "Am I late?"
+        },
+        {
+          "answer": "no",
+          "question": "Am I already there?"
+        }
+      ],
+      "sourceRequestId": "publish-test"
+    }
+  ]
+}
