@@ -1,7 +1,6 @@
 const SETTINGS_KEY = "soundchunk-settings-v1";
 const USER_KEY = "soundchunk-user-v1";
 const DEMO_APPROVED_KEY = "soundchunk-demo-approved-v1";
-const REQUESTS_KEY = "soundchunk-expression-requests-v1";
 
 const defaultUser = {
   email: "",
@@ -32,7 +31,7 @@ const savedUserProgress = loadJson(USER_KEY, { lastSeenLibraryVersion: "" });
 const state = {
   user: { ...defaultUser, lastSeenLibraryVersion: savedUserProgress.lastSeenLibraryVersion || "" },
   settings: loadJson(SETTINGS_KEY, { notificationsEnabled: true }),
-  requests: loadArray(REQUESTS_KEY),
+  requests: [],
   users: [],
   manifest: fallbackManifest,
   manifestStatus: "idle",
@@ -55,15 +54,6 @@ function saveJson(key, value) {
 
 function removeJson(key) {
   localStorage.removeItem(key);
-}
-
-function loadArray(key) {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(key));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
 }
 
 function normalizeUser(user) {
@@ -309,18 +299,6 @@ function renderRequests() {
   }
 }
 
-function saveRequests() {
-  saveJson(REQUESTS_KEY, state.requests);
-}
-
-function updateRequest(id, patch) {
-  state.requests = state.requests.map((request) => (
-    request.id === id ? { ...request, ...patch, updatedAt: new Date().toISOString() } : request
-  ));
-  saveRequests();
-  renderRequests();
-}
-
 function buildDraft(request) {
   const slug = request.text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "expression";
   return {
@@ -455,7 +433,23 @@ async function loadServerUser() {
     loadDemoUser();
   }
   renderUser();
-  if (state.user.role === "operator") await loadUsers();
+  if (state.user.role === "operator") {
+    await loadUsers();
+    await loadRequests();
+  }
+}
+
+async function loadRequests() {
+  try {
+    const res = await fetch("/api/requests", { cache: "no-store" });
+    if (!res.ok) throw new Error("requests_fetch_failed");
+    const data = await res.json();
+    state.requests = Array.isArray(data.requests) ? data.requests : [];
+  } catch {
+    state.requests = [];
+    toast("요청 목록을 불러오지 못했습니다.");
+  }
+  renderRequests();
 }
 
 async function loadUsers() {
@@ -480,6 +474,29 @@ async function updateUserAccess(email, action) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || `user_update_failed_${res.status}`);
   await loadUsers();
+}
+
+async function createExpressionRequest(text, context) {
+  const res = await fetch("/api/requests", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text, context }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `request_create_failed_${res.status}`);
+  return data.request;
+}
+
+async function updateExpressionRequest(id, action, patch = {}) {
+  const res = await fetch("/api/requests", {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ id, action, ...patch }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `request_update_failed_${res.status}`);
+  await loadRequests();
+  return data.request;
 }
 
 async function buildGeminiDraft(request) {
@@ -597,31 +614,25 @@ function bindEvents() {
   $("request-form").addEventListener("submit", (event) => {
     event.preventDefault();
     if (!state.user.canRequestExpression) {
-      toast("운영자가 표현 요청 기능을 꺼두었습니다.");
+      toast("현재 요청할 수 없습니다.");
       return;
     }
     const text = $("request-text").value.trim();
     const context = $("request-context").value.trim();
     if (!text) return;
-    state.requests.unshift({
-      id: `req-${Date.now()}`,
-      text,
-      context,
-      status: "new",
-      createdAt: new Date().toISOString(),
-    });
-    saveRequests();
-    renderRequests();
-    event.currentTarget.reset();
-    toast("표현 요청을 로컬 큐에 저장했습니다.");
+    createExpressionRequest(text, context)
+      .then(() => {
+        event.currentTarget.reset();
+        toast("요청을 보냈습니다.");
+      })
+      .catch((error) => toast(`요청 실패: ${error.message}`));
   });
   $("feedback-form").addEventListener("submit", (event) => void submitFeedback(event));
   $("refresh-users").addEventListener("click", () => void loadUsers());
   $("clear-requests").addEventListener("click", () => {
     state.requests = [];
-    saveRequests();
     renderRequests();
-    toast("로컬 요청 큐를 비웠습니다.");
+    toast("화면의 요청 목록을 비웠습니다.");
   });
   $("export-library").addEventListener("click", () => {
     const library = buildLibraryExport();
@@ -657,27 +668,35 @@ function bindEvents() {
     if (!request) return;
     if (action === "draft") {
       const draft = buildDraft(request);
-      updateRequest(id, { status: "draft", draft, validation: validateDraft(draft) });
-      toast("라이브러리 초안을 만들었습니다.");
+      const validation = validateDraft(draft);
+      updateExpressionRequest(id, "save_draft", { draft, validation })
+        .then(() => toast("초안을 저장했습니다."))
+        .catch((error) => toast(`초안 저장 실패: ${error.message}`));
       return;
     }
     if (action === "gemini") {
       toast("Gemini 초안을 요청합니다.");
       buildGeminiDraft(request)
         .then((draft) => {
-          updateRequest(id, { status: "draft", draft, validation: validateDraft(draft) });
-          toast("Gemini 초안을 만들었습니다.");
+          const validation = validateDraft(draft);
+          return updateExpressionRequest(id, "save_draft", { draft, validation });
+        })
+        .then(() => {
+          toast("Gemini 초안을 저장했습니다.");
         })
         .catch((error) => {
           const fallback = buildDraft(request);
           const draft = { ...fallback, note: error.message };
-          updateRequest(id, { status: "draft", draft, validation: validateDraft(draft) });
-          toast("Gemini 설정 전이라 수동 초안을 만들었습니다.");
+          const validation = validateDraft(draft);
+          updateExpressionRequest(id, "save_draft", { draft, validation })
+            .then(() => toast("수동 초안을 저장했습니다."))
+            .catch((saveError) => toast(`초안 저장 실패: ${saveError.message}`));
         });
       return;
     }
-    updateRequest(id, { status: action });
-    toast(`요청 상태를 ${action}로 바꿨습니다.`);
+    updateExpressionRequest(id, action)
+      .then(() => toast("요청 상태를 바꿨습니다."))
+      .catch((error) => toast(`상태 변경 실패: ${error.message}`));
   });
 }
 

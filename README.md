@@ -14,6 +14,7 @@ This repository is an early static-first prototype. It currently demonstrates:
 - Gemini draft generation and GitHub library publishing through server-side Functions
 - operator-only publish gate using Cloudflare Access identity and `OPERATOR_EMAILS`
 - first-login user capture with pending/approved/rejected status in Cloudflare KV
+- expression request queue stored in Cloudflare KV for operator review
 - May-led agent workflow, OKR, and observability documentation
 
 Persistent request storage and full user administration are planned but not yet implemented.
@@ -90,6 +91,7 @@ Important variables:
 - `APPROVED_USER_EMAILS`
 - `REQUEST_ENABLED_EMAILS`
 - `USERS_KV` binding in Cloudflare Pages project settings
+- `REQUESTS_KV` binding in Cloudflare Pages project settings
 - `GA_MEASUREMENT_ID`
 - `SENTRY_DSN`
 
