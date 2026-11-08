@@ -6,14 +6,14 @@
 - target-node: nodes/20261108-006-deployment-attempt.md
 - reviewer: May
 - created: 2026-11-08
-- verdict: pass-with-fixes
+- verdict: pass
 
 ## Scores
 
 - correctness: 4
 - security: 4
 - readability: 4
-- demo-value: 3
+- demo-value: 5
 - maintainability: 4
 
 ## Training Effect
@@ -26,28 +26,28 @@
 
 - ga4-events-reviewed: none
 - sentry-issues-reviewed: none
-- okr-key-result-impact: improves deploy readiness, but public deployment remains blocked
+- okr-key-result-impact: public static demo is deployed; production functions remain blocked
 - data-confidence: high
 
 ## Findings
 
-- The project is ready for Git-connected Cloudflare Pages deployment.
-- Production deployment cannot complete until GitHub credentials are refreshed.
-- May correctly avoided claiming a public deployment URL without verification.
+- GitHub repository was created and pushed.
+- GitHub Pages public URL was verified with HTTP 200.
+- Manifest URL was verified with HTTP 200.
+- Cloudflare Pages production deployment cannot complete until `CLOUDFLARE_API_TOKEN` is provided.
 
 ## Required Fixes
 
-- Re-authenticate GitHub CLI.
-- Confirm Cloudflare Pages access.
 - Add production environment variables in Cloudflare.
+- Deploy Cloudflare Pages when `CLOUDFLARE_API_TOKEN` is available.
 
 ## Backpropagation
 
-- Update node: deployment status should remain blocked until public URL verification.
+- Update node: deployment status now records static demo success and Cloudflare blocker.
 - Update edge: none
 - Update template: none
 - Update rule: deployment reviews require a verified URL or explicit blocker.
 
 ## Next Iteration
 
-After GitHub auth is restored, create the GitHub repository, push the commit, and connect Cloudflare Pages.
+After Cloudflare auth is available, deploy Pages Functions production build and verify `/api/feedback`.

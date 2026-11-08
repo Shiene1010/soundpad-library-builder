@@ -2,7 +2,21 @@
 
 ## Current Result
 
-May prepared the project for deployment, but production deployment is blocked by expired GitHub CLI credentials and unavailable Cloudflare authentication in this environment.
+May deployed the static mobile web demo to GitHub Pages.
+
+Public URL:
+
+```text
+https://shiene1010.github.io/soundpad-library-builder/
+```
+
+Repository:
+
+```text
+https://github.com/Shiene1010/soundpad-library-builder
+```
+
+Cloudflare Pages production deployment remains blocked until `CLOUDFLARE_API_TOKEN` is provided.
 
 ## Verified Locally
 
@@ -11,8 +25,10 @@ May prepared the project for deployment, but production deployment is blocked by
 - `app.js` passes syntax check.
 - `functions/api/feedback.js` passes syntax check.
 - `.env` is ignored and `.env.example` is safe to commit.
+- GitHub Pages root returns HTTP 200.
+- GitHub Pages manifest returns HTTP 200.
 
-## Preferred Deployment Path
+## Production Deployment Path
 
 Use GitHub-connected Cloudflare Pages:
 
@@ -31,18 +47,22 @@ Use GitHub-connected Cloudflare Pages:
 
 Direct root upload can accidentally include local files if reviewed poorly. Git-connected deployment respects `.gitignore` and gives a clearer audit trail.
 
-## Blockers
+## Cloudflare Blockers
 
-- `gh auth status` reports expired tokens for configured GitHub accounts.
-- `npx wrangler --version` did not complete in the current restricted environment.
-- Cloudflare account/project authentication is not available to this shell session.
+- Wrangler is available.
+- Cloudflare Pages deploy failed because `CLOUDFLARE_API_TOKEN` is not set in this non-interactive environment.
+- GitHub Pages is live, but Cloudflare Pages Functions are not running there.
 
 ## Next Operator Action
 
-Run:
+For Cloudflare production deployment, create a Cloudflare API token and set:
 
 ```sh
-gh auth login -h github.com
+CLOUDFLARE_API_TOKEN=...
 ```
 
-Then May can create/push the GitHub repo and continue Cloudflare setup.
+Then May can run:
+
+```sh
+npx wrangler pages deploy . --project-name soundpad-library-builder --branch main
+```

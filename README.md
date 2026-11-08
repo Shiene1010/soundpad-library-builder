@@ -15,6 +15,18 @@ This repository is an early static-first prototype. It currently demonstrates:
 
 Production authentication, Gemini generation, GitHub library publishing, and persistent request storage are planned but not yet implemented.
 
+Public demo:
+
+```text
+https://shiene1010.github.io/soundpad-library-builder/
+```
+
+GitHub repository:
+
+```text
+https://github.com/Shiene1010/soundpad-library-builder
+```
+
 ## Project Structure
 
 ```text
@@ -76,7 +88,9 @@ Production secrets should live in Cloudflare project settings or an equivalent s
 
 ## Deployment
 
-Recommended deployment target: Cloudflare Pages with Pages Functions.
+Current static demo deployment: GitHub Pages.
+
+Recommended production deployment target: Cloudflare Pages with Pages Functions.
 
 See [docs/deployment.md](docs/deployment.md) for setup steps. Prefer Git-connected Cloudflare Pages deployment over uploading the entire project root manually, because direct root uploads can accidentally include local files if not reviewed.
 
