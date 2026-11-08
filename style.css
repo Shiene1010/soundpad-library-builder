@@ -106,7 +106,8 @@ p {
 
 .tab,
 .text-button,
-.primary {
+.primary,
+.secondary {
   border: 0;
   cursor: pointer;
 }
@@ -191,6 +192,15 @@ textarea {
   opacity: 0.45;
 }
 
+.secondary {
+  min-height: 40px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .text-button {
   background: transparent;
   color: var(--accent);
@@ -201,6 +211,20 @@ textarea {
 .muted {
   color: var(--muted);
   font-size: 12px;
+}
+
+.operator-panel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.ordered {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .switch input {

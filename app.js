@@ -213,6 +213,9 @@ function bindEvents() {
     toast("표현 요청 초안을 저장했습니다.");
   });
   $("feedback-form").addEventListener("submit", (event) => void submitFeedback(event));
+  $("operator-demo").addEventListener("click", () => {
+    $("operator-summary").classList.toggle("hidden");
+  });
 }
 
 loadDemoUser();
