@@ -130,12 +130,24 @@ function renderUsers() {
         <span>${user.canRequestExpression ? "요청 가능" : "요청 꺼짐"}</span>
       </div>
       <div class="action-row user-actions">
-        <button class="mini-button" data-user-action="approve" data-user-email="${escapeHtml(user.email)}" type="button">승인</button>
-        <button class="mini-button" data-user-action="reject" data-user-email="${escapeHtml(user.email)}" type="button">거절</button>
-        <button class="mini-button" data-user-action="enable_requests" data-user-email="${escapeHtml(user.email)}" type="button">요청 켬</button>
-        <button class="mini-button" data-user-action="disable_requests" data-user-email="${escapeHtml(user.email)}" type="button">요청 끔</button>
+        <button class="mini-button" data-user-action="approve" type="button">승인</button>
+        <button class="mini-button" data-user-action="reject" type="button">거절</button>
+        <button class="mini-button" data-user-action="enable_requests" type="button">요청 켬</button>
+        <button class="mini-button" data-user-action="disable_requests" type="button">요청 끔</button>
       </div>
     `;
+    card.querySelectorAll("[data-user-action]").forEach((button) => {
+      button.addEventListener("click", () => {
+        updateUserAccess(user.email, button.dataset.userAction)
+          .then(() => toast("사용자 권한을 업데이트했습니다."))
+          .catch((error) => {
+            const message = error.message === "approved_user_limit_reached"
+              ? "승인 사용자는 45명까지만 가능합니다."
+              : `사용자 권한 업데이트 실패: ${error.message}`;
+            toast(message);
+          });
+      });
+    });
     list.append(card);
   }
 }
@@ -379,7 +391,7 @@ async function updateUserAccess(email, action) {
     body: JSON.stringify({ email, action }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "user_update_failed");
+  if (!res.ok) throw new Error(data.error || `user_update_failed_${res.status}`);
   await loadUsers();
 }
 
@@ -516,20 +528,6 @@ function bindEvents() {
     $("operator-summary").classList.toggle("hidden");
   });
   $("refresh-users").addEventListener("click", () => void loadUsers());
-  $("user-list").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-user-action]");
-    if (!button) return;
-    const email = button.dataset.userEmail;
-    const action = button.dataset.userAction;
-    updateUserAccess(email, action)
-      .then(() => toast("사용자 권한을 업데이트했습니다."))
-      .catch((error) => {
-        const message = error.message === "approved_user_limit_reached"
-          ? "승인 사용자는 45명까지만 가능합니다."
-          : "사용자 권한 업데이트에 실패했습니다.";
-        toast(message);
-      });
-  });
   $("clear-requests").addEventListener("click", () => {
     state.requests = [];
     saveRequests();
