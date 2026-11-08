@@ -235,6 +235,27 @@ function buildLibraryExport() {
   };
 }
 
+function buildManifestPreview(library) {
+  const date = new Date().toISOString().slice(0, 10);
+  const compactDate = date.replaceAll("-", "");
+  return {
+    updated: date,
+    latestVersion: date.replaceAll("-", "."),
+    libraries: [
+      {
+        id: `operator-${compactDate}`,
+        title: `Operator Chunk Pack ${date}`,
+        version: date.replaceAll("-", "."),
+        path: `libraries/operator/chunk-library-${compactDate}.clib.json`,
+        count: library.count,
+        addedCount: library.count,
+        summary: `${library.count}개 표현 초안 업데이트`,
+        publishedAt: new Date().toISOString(),
+      },
+    ],
+  };
+}
+
 function downloadJson(filename, data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -380,6 +401,9 @@ function bindEvents() {
     const library = buildLibraryExport();
     $("export-preview").textContent = JSON.stringify(library, null, 2);
     $("export-preview").classList.remove("hidden");
+    const manifest = buildManifestPreview(library);
+    $("manifest-preview").textContent = JSON.stringify(manifest, null, 2);
+    $("manifest-preview").classList.remove("hidden");
     if (library.count === 0) {
       toast("내보낼 초안이 없습니다.");
       return;
