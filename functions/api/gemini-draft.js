@@ -34,7 +34,14 @@ export async function onRequestPost(context) {
     });
 
     const result = await response.json();
-    if (!response.ok) return json({ error: "gemini_generation_failed", traceId }, 502);
+    if (!response.ok) {
+      return json({
+        error: "gemini_generation_failed",
+        traceId,
+        status: response.status,
+        message: sanitizeText(result.error?.message || "", 240),
+      }, 502);
+    }
 
     const raw = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
     const draft = JSON.parse(raw);
