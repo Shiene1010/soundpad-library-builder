@@ -256,6 +256,11 @@ function buildManifestPreview(library) {
   };
 }
 
+function buildLibraryPath() {
+  const compactDate = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+  return `libraries/operator/chunk-library-${compactDate}.clib.json`;
+}
+
 function downloadJson(filename, data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -264,6 +269,24 @@ function downloadJson(filename, data) {
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+async function publishLibrary() {
+  const library = buildLibraryExport();
+  const manifest = buildManifestPreview(library);
+  if (library.count === 0) throw new Error("empty_library");
+  const res = await fetch("/api/publish-library", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      library,
+      manifest,
+      libraryPath: buildLibraryPath(),
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "publish_failed");
+  return data;
 }
 
 async function buildGeminiDraft(request) {
@@ -410,6 +433,12 @@ function bindEvents() {
     }
     downloadJson(`chunk-library-${new Date().toISOString().slice(0, 10)}.clib.json`, library);
     toast("라이브러리 JSON을 내보냈습니다.");
+  });
+  $("publish-library").addEventListener("click", () => {
+    toast("GitHub 배포를 시작합니다.");
+    publishLibrary()
+      .then(() => toast("GitHub libraries 폴더에 배포했습니다."))
+      .catch((error) => toast(error.message === "empty_library" ? "배포할 초안이 없습니다." : "GitHub 배포에 실패했습니다."));
   });
   $("request-list").addEventListener("click", (event) => {
     const button = event.target.closest("[data-request-action]");
