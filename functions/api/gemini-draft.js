@@ -16,6 +16,7 @@ export async function onRequestPost(context) {
       "Return strict JSON only for a Sound Chunk draft.",
       "Schema: { id, text, level, chunks:[{text,hint}], tones:[{key,emoji,label,pitch,rate,text}], ccq:[{answer,question}], sourceRequestId }.",
       "Use Korean hints. Make 2 chunks, 3 tones, and 2 CCQ questions.",
+      "Every ccq.answer must be exactly yes or no.",
       `Expression: ${text}`,
       `Usage context: ${usageContext || "not provided"}`,
       `sourceRequestId: ${requestId || "manual"}`,

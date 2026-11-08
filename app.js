@@ -156,6 +156,7 @@ function renderRequests() {
         <button class="mini-button" data-request-action="draft" data-request-id="${escapeHtml(request.id)}" type="button">수동초안</button>
         <button class="mini-button" data-request-action="gemini" data-request-id="${escapeHtml(request.id)}" type="button">Gemini</button>
       </div>
+      ${request.validation ? renderValidation(request.validation) : ""}
       ${request.draft ? `<pre class="draft-preview">${escapeHtml(JSON.stringify(request.draft, null, 2))}</pre>` : ""}
     `;
     list.append(card);
@@ -186,6 +187,39 @@ function buildDraft(request) {
     ccq: [],
     sourceRequestId: request.id,
   };
+}
+
+function validateDraft(draft) {
+  const issues = [];
+  if (!draft || typeof draft !== "object") issues.push("초안 JSON이 객체가 아닙니다.");
+  if (!draft?.id) issues.push("id가 없습니다.");
+  if (!draft?.text) issues.push("text가 없습니다.");
+  if (!Array.isArray(draft?.chunks) || draft.chunks.length < 1) issues.push("chunk가 1개 이상 필요합니다.");
+  if (!Array.isArray(draft?.tones) || draft.tones.length < 3) issues.push("tone은 최소 3개 필요합니다.");
+  if (!Array.isArray(draft?.ccq) || draft.ccq.length < 2) issues.push("ccq는 최소 2개 필요합니다.");
+  for (const [index, chunk] of (draft?.chunks || []).entries()) {
+    if (!chunk.text || !chunk.hint) issues.push(`chunk ${index + 1}에 text/hint가 필요합니다.`);
+  }
+  for (const [index, tone] of (draft?.tones || []).entries()) {
+    if (!tone.key || !tone.label || !tone.text) issues.push(`tone ${index + 1}에 key/label/text가 필요합니다.`);
+  }
+  for (const [index, ccq] of (draft?.ccq || []).entries()) {
+    if (!["yes", "no"].includes(String(ccq.answer || "").toLowerCase())) {
+      issues.push(`ccq ${index + 1} answer는 yes/no여야 합니다.`);
+    }
+    if (!ccq.question) issues.push(`ccq ${index + 1}에 question이 필요합니다.`);
+  }
+  return {
+    ok: issues.length === 0,
+    issues,
+  };
+}
+
+function renderValidation(validation) {
+  const items = validation.issues.length
+    ? validation.issues.map((issue) => `<li>${escapeHtml(issue)}</li>`).join("")
+    : "<li>검증 통과</li>";
+  return `<div class="validation ${validation.ok ? "is-ok" : "is-warn"}"><strong>${validation.ok ? "검증 통과" : "검증 필요"}</strong><ul>${items}</ul></div>`;
 }
 
 async function buildGeminiDraft(request) {
@@ -327,7 +361,8 @@ function bindEvents() {
     const request = state.requests.find((item) => item.id === id);
     if (!request) return;
     if (action === "draft") {
-      updateRequest(id, { status: "draft", draft: buildDraft(request) });
+      const draft = buildDraft(request);
+      updateRequest(id, { status: "draft", draft, validation: validateDraft(draft) });
       toast("라이브러리 초안을 만들었습니다.");
       return;
     }
@@ -335,12 +370,13 @@ function bindEvents() {
       toast("Gemini 초안을 요청합니다.");
       buildGeminiDraft(request)
         .then((draft) => {
-          updateRequest(id, { status: "draft", draft });
+          updateRequest(id, { status: "draft", draft, validation: validateDraft(draft) });
           toast("Gemini 초안을 만들었습니다.");
         })
         .catch((error) => {
           const fallback = buildDraft(request);
-          updateRequest(id, { status: "draft", draft: { ...fallback, note: error.message } });
+          const draft = { ...fallback, note: error.message };
+          updateRequest(id, { status: "draft", draft, validation: validateDraft(draft) });
           toast("Gemini 설정 전이라 수동 초안을 만들었습니다.");
         });
       return;
